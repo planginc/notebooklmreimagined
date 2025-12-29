@@ -44,7 +44,7 @@ export default function LoginPage() {
           </div>
           <CardTitle className="text-2xl">Welcome Back</CardTitle>
           <CardDescription>
-            Sign in to your Open NotebookLM account
+            Sign in to your NotebookLM Reimagined account
           </CardDescription>
         </CardHeader>
         <form onSubmit={handleLogin}>

@@ -44,7 +44,7 @@ export function DashboardHeader({
           <span className="text-lg font-bold text-white">N</span>
         </div>
         <span className="text-lg font-semibold text-[var(--text-primary)] hidden sm:inline">
-          Open NotebookLM
+          NotebookLM Reimagined
         </span>
       </div>
 

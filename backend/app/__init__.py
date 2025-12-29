@@ -1,1 +1,1 @@
-# Open NotebookLM Backend
+# NotebookLM Reimagined Backend

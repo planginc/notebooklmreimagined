@@ -1,6 +1,6 @@
-# Open NotebookLM - Complete UI Overhaul Specification
+# NotebookLM Reimagined - Complete UI Overhaul Specification
 
-> A comprehensive guide to transforming Open NotebookLM into a polished, production-ready research intelligence platform inspired by Google's NotebookLM.
+> A comprehensive guide to transforming NotebookLM Reimagined into a polished, production-ready research intelligence platform inspired by Google's NotebookLM.
 
 ---
 

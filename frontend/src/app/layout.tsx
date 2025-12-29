@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Open NotebookLM",
+  title: "NotebookLM Reimagined",
   description: "An API-first research intelligence platform",
 };
 

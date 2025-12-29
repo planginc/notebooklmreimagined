@@ -1,4 +1,4 @@
-// API client for Open NotebookLM
+// API client for NotebookLM Reimagined
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || ''
 

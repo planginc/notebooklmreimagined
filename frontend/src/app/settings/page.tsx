@@ -223,7 +223,7 @@ export default function SettingsPage() {
               <div>
                 <h2 className="text-xl font-semibold text-white">API Keys</h2>
                 <p className="text-gray-400 mt-1">
-                  Manage API keys for programmatic access to Open NotebookLM
+                  Manage API keys for programmatic access to NotebookLM Reimagined
                 </p>
               </div>
               <Button
@@ -273,7 +273,7 @@ export default function SettingsPage() {
                     No API Keys
                   </h3>
                   <p className="text-gray-400 mb-4">
-                    Create an API key to access Open NotebookLM programmatically
+                    Create an API key to access NotebookLM Reimagined programmatically
                   </p>
                   <Button
                     onClick={() => setCreateDialogOpen(true)}

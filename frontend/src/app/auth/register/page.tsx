@@ -50,7 +50,7 @@ export default function RegisterPage() {
           </div>
           <CardTitle className="text-2xl">Create Account</CardTitle>
           <CardDescription>
-            Get started with Open NotebookLM
+            Get started with NotebookLM Reimagined
           </CardDescription>
         </CardHeader>
         <form onSubmit={handleRegister}>

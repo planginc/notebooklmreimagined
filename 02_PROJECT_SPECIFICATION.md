@@ -1,4 +1,4 @@
-# Open NotebookLM: Project Specification
+# NotebookLM Reimagined: Project Specification
 ## Version 2.0 | December 2025 | Supabase Edition
 
 ---

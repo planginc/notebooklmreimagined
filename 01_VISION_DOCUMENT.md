@@ -1,4 +1,4 @@
-# Project Vision: Open NotebookLM
+# Project Vision: NotebookLM Reimagined
 ## An API-First Research Intelligence Platform
 
 ---
@@ -179,7 +179,7 @@ curl -X POST https://your-project.supabase.co/functions/v1/notebooks/nb_123/audi
 ### For No-Code Users (n8n / Zapier)
 
 1. **Trigger**: New file added to Google Drive
-2. **Action**: HTTP Request → Upload to Open NotebookLM
+2. **Action**: HTTP Request → Upload to NotebookLM Reimagined
 3. **Action**: HTTP Request → Generate summary
 4. **Action**: Post summary to Slack
 5. **Action**: HTTP Request → Generate podcast
@@ -256,7 +256,7 @@ The philosophy is simple:
 
 **NotebookLM says**: "Here's our product. Use it our way."
 
-**Open NotebookLM says**: "Here's a platform. Build whatever you want."
+**NotebookLM Reimagined says**: "Here's a platform. Build whatever you want."
 
 With Supabase handling all infrastructure and the Supabase MCP enabling rapid AI-assisted development, we can focus entirely on features.
 
