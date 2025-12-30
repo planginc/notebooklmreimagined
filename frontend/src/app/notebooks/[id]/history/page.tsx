@@ -2,31 +2,32 @@
 
 import { useState, useEffect, useCallback, use } from 'react'
 import { useRouter } from 'next/navigation'
+import { motion, AnimatePresence } from 'framer-motion'
 import {
   ArrowLeft,
-  History,
-  RefreshCw,
-  Filter,
-  Loader2,
-  Mic,
-  Video,
-  Search,
-  Table2,
+  ClockCounterClockwise,
+  FunnelSimple,
+  ArrowsClockwise,
+  SquaresFour,
+  List,
+  Microphone,
+  VideoCamera,
+  MagnifyingGlass,
+  Table,
   FileText,
-  Presentation,
+  PresentationChart,
   Image,
-  Layers,
-  HelpCircle,
+  Cards,
+  Question,
   BookOpen,
-  MessageCircleQuestion,
-  Network,
-  StickyNote,
+  ChatCircleText,
+  TreeStructure,
+  Note,
   Clock,
-  Grid3X3,
-  List
-} from 'lucide-react'
+  SpinnerGap,
+  Sparkle
+} from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
-import { ScrollArea } from '@/components/ui/scroll-area'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -42,104 +43,132 @@ import { cn } from '@/lib/utils'
 import { createClient } from '@/lib/supabase'
 import type { HistoryItem, HistoryItemType } from '@/app/api/notebooks/[id]/history/route'
 
-// Type configuration
+// Type configuration with Phosphor icons and refined colors
 const typeConfig: Record<HistoryItemType, {
   icon: React.ElementType
   label: string
-  gradient: string
-  badgeColor: string
-  bgColor: string
+  iconBg: string
+  iconColor: string
+  badgeBg: string
+  badgeText: string
+  badgeBorder: string
 }> = {
   audio: {
-    icon: Mic,
+    icon: Microphone,
     label: 'Audio',
-    gradient: 'from-orange-500/20 to-amber-500/20',
-    badgeColor: 'bg-orange-500/20 text-orange-400 border-orange-500/30',
-    bgColor: 'bg-orange-500/10'
+    iconBg: 'from-orange-500/30 to-amber-600/20',
+    iconColor: 'text-orange-400',
+    badgeBg: 'bg-orange-500/10',
+    badgeText: 'text-orange-400',
+    badgeBorder: 'border-orange-500/20'
   },
   video: {
-    icon: Video,
+    icon: VideoCamera,
     label: 'Video',
-    gradient: 'from-purple-500/20 to-violet-500/20',
-    badgeColor: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
-    bgColor: 'bg-purple-500/10'
+    iconBg: 'from-purple-500/30 to-violet-600/20',
+    iconColor: 'text-purple-400',
+    badgeBg: 'bg-purple-500/10',
+    badgeText: 'text-purple-400',
+    badgeBorder: 'border-purple-500/20'
   },
   research: {
-    icon: Search,
+    icon: MagnifyingGlass,
     label: 'Research',
-    gradient: 'from-blue-500/20 to-cyan-500/20',
-    badgeColor: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-    bgColor: 'bg-blue-500/10'
+    iconBg: 'from-blue-500/30 to-cyan-600/20',
+    iconColor: 'text-blue-400',
+    badgeBg: 'bg-blue-500/10',
+    badgeText: 'text-blue-400',
+    badgeBorder: 'border-blue-500/20'
   },
   data_table: {
-    icon: Table2,
+    icon: Table,
     label: 'Table',
-    gradient: 'from-emerald-500/20 to-green-500/20',
-    badgeColor: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
-    bgColor: 'bg-emerald-500/10'
+    iconBg: 'from-emerald-500/30 to-green-600/20',
+    iconColor: 'text-emerald-400',
+    badgeBg: 'bg-emerald-500/10',
+    badgeText: 'text-emerald-400',
+    badgeBorder: 'border-emerald-500/20'
   },
   report: {
     icon: FileText,
     label: 'Report',
-    gradient: 'from-blue-500/20 to-indigo-500/20',
-    badgeColor: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-    bgColor: 'bg-blue-500/10'
+    iconBg: 'from-indigo-500/30 to-blue-600/20',
+    iconColor: 'text-indigo-400',
+    badgeBg: 'bg-indigo-500/10',
+    badgeText: 'text-indigo-400',
+    badgeBorder: 'border-indigo-500/20'
   },
   slide_deck: {
-    icon: Presentation,
+    icon: PresentationChart,
     label: 'Slides',
-    gradient: 'from-violet-500/20 to-purple-500/20',
-    badgeColor: 'bg-violet-500/20 text-violet-400 border-violet-500/30',
-    bgColor: 'bg-violet-500/10'
+    iconBg: 'from-violet-500/30 to-purple-600/20',
+    iconColor: 'text-violet-400',
+    badgeBg: 'bg-violet-500/10',
+    badgeText: 'text-violet-400',
+    badgeBorder: 'border-violet-500/20'
   },
   infographic: {
     icon: Image,
     label: 'Infographic',
-    gradient: 'from-rose-500/20 to-pink-500/20',
-    badgeColor: 'bg-rose-500/20 text-rose-400 border-rose-500/30',
-    bgColor: 'bg-rose-500/10'
+    iconBg: 'from-rose-500/30 to-pink-600/20',
+    iconColor: 'text-rose-400',
+    badgeBg: 'bg-rose-500/10',
+    badgeText: 'text-rose-400',
+    badgeBorder: 'border-rose-500/20'
   },
   flashcards: {
-    icon: Layers,
+    icon: Cards,
     label: 'Flashcards',
-    gradient: 'from-blue-500/20 to-sky-500/20',
-    badgeColor: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-    bgColor: 'bg-blue-500/10'
+    iconBg: 'from-sky-500/30 to-blue-600/20',
+    iconColor: 'text-sky-400',
+    badgeBg: 'bg-sky-500/10',
+    badgeText: 'text-sky-400',
+    badgeBorder: 'border-sky-500/20'
   },
   quiz: {
-    icon: HelpCircle,
+    icon: Question,
     label: 'Quiz',
-    gradient: 'from-purple-500/20 to-fuchsia-500/20',
-    badgeColor: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
-    bgColor: 'bg-purple-500/10'
+    iconBg: 'from-fuchsia-500/30 to-purple-600/20',
+    iconColor: 'text-fuchsia-400',
+    badgeBg: 'bg-fuchsia-500/10',
+    badgeText: 'text-fuchsia-400',
+    badgeBorder: 'border-fuchsia-500/20'
   },
   study_guide: {
     icon: BookOpen,
     label: 'Study Guide',
-    gradient: 'from-orange-500/20 to-yellow-500/20',
-    badgeColor: 'bg-orange-500/20 text-orange-400 border-orange-500/30',
-    bgColor: 'bg-orange-500/10'
+    iconBg: 'from-yellow-500/30 to-orange-600/20',
+    iconColor: 'text-yellow-400',
+    badgeBg: 'bg-yellow-500/10',
+    badgeText: 'text-yellow-400',
+    badgeBorder: 'border-yellow-500/20'
   },
   faq: {
-    icon: MessageCircleQuestion,
+    icon: ChatCircleText,
     label: 'FAQ',
-    gradient: 'from-teal-500/20 to-emerald-500/20',
-    badgeColor: 'bg-teal-500/20 text-teal-400 border-teal-500/30',
-    bgColor: 'bg-teal-500/10'
+    iconBg: 'from-teal-500/30 to-emerald-600/20',
+    iconColor: 'text-teal-400',
+    badgeBg: 'bg-teal-500/10',
+    badgeText: 'text-teal-400',
+    badgeBorder: 'border-teal-500/20'
   },
   mind_map: {
-    icon: Network,
+    icon: TreeStructure,
     label: 'Mind Map',
-    gradient: 'from-cyan-500/20 to-blue-500/20',
-    badgeColor: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30',
-    bgColor: 'bg-cyan-500/10'
+    iconBg: 'from-cyan-500/30 to-blue-600/20',
+    iconColor: 'text-cyan-400',
+    badgeBg: 'bg-cyan-500/10',
+    badgeText: 'text-cyan-400',
+    badgeBorder: 'border-cyan-500/20'
   },
   note: {
-    icon: StickyNote,
+    icon: Note,
     label: 'Note',
-    gradient: 'from-amber-500/20 to-yellow-500/20',
-    badgeColor: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
-    bgColor: 'bg-amber-500/10'
+    iconBg: 'from-amber-500/30 to-yellow-600/20',
+    iconColor: 'text-amber-400',
+    badgeBg: 'bg-amber-500/10',
+    badgeText: 'text-amber-400',
+    badgeBorder: 'border-amber-500/20'
   }
 }
 
@@ -225,9 +254,10 @@ interface HistoryCardProps {
   item: HistoryItem
   onClick: () => void
   viewMode: 'grid' | 'list'
+  index: number
 }
 
-function HistoryCard({ item, onClick, viewMode }: HistoryCardProps) {
+function HistoryCard({ item, onClick, viewMode, index }: HistoryCardProps) {
   const config = typeConfig[item.type] || typeConfig.note
   const Icon = config.icon
   const previewText = getPreviewText(item.type, item.preview)
@@ -237,42 +267,45 @@ function HistoryCard({ item, onClick, viewMode }: HistoryCardProps) {
 
   if (viewMode === 'list') {
     return (
-      <button
+      <motion.button
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: index * 0.03, duration: 0.3 }}
         onClick={onClick}
-        className={cn(
-          'w-full text-left p-4 rounded-xl border border-[rgba(255,255,255,0.06)]',
-          'bg-[var(--bg-secondary)] hover:bg-[var(--bg-tertiary)]',
-          'transition-all duration-200 group',
-          'focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/50'
-        )}
+        className="glass-card glass-card-hover w-full text-left p-4 rounded-2xl group focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/30"
       >
         <div className="flex items-center gap-4">
-          {/* Icon */}
+          {/* Icon with gradient background */}
           <div className={cn(
-            'w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0',
-            `bg-gradient-to-br ${config.gradient}`
+            'relative w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0',
+            'bg-gradient-to-br shadow-lg',
+            config.iconBg
           )}>
+            <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-white/10 to-transparent" />
             {isProcessing ? (
-              <Loader2 className="h-5 w-5 text-[var(--text-secondary)] animate-spin" />
+              <SpinnerGap className={cn('h-5 w-5 animate-spin', config.iconColor)} weight="bold" />
             ) : (
-              <Icon className="h-5 w-5 text-[var(--text-secondary)]" />
+              <Icon className={cn('h-5 w-5 relative z-10', config.iconColor)} weight="duotone" />
             )}
           </div>
 
           {/* Content */}
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
-              <span className="text-base font-medium text-[var(--text-primary)] truncate">
+            <div className="flex items-center gap-3 mb-1">
+              <span className="text-[15px] font-medium text-[var(--text-primary)] truncate group-hover:text-white transition-colors">
                 {item.title}
               </span>
               <span className={cn(
-                'text-xs px-2 py-0.5 rounded-full border flex-shrink-0',
-                config.badgeColor
+                'badge-premium flex-shrink-0',
+                config.badgeBg,
+                config.badgeText,
+                config.badgeBorder,
+                'border'
               )}>
                 {config.label}
               </span>
             </div>
-            <p className="text-sm text-[var(--text-tertiary)]">
+            <p className="text-sm text-[var(--text-tertiary)] group-hover:text-[var(--text-secondary)] transition-colors">
               {previewText}
             </p>
           </div>
@@ -280,76 +313,79 @@ function HistoryCard({ item, onClick, viewMode }: HistoryCardProps) {
           {/* Timestamp */}
           <Tooltip>
             <TooltipTrigger asChild>
-              <div className="flex items-center gap-1.5 text-xs text-[var(--text-tertiary)] flex-shrink-0">
-                <Clock className="h-3.5 w-3.5" />
+              <div className="timestamp-premium flex-shrink-0 opacity-60 group-hover:opacity-100 transition-opacity">
+                <Clock className="h-3.5 w-3.5" weight="bold" />
                 <span>{timeAgo}</span>
               </div>
             </TooltipTrigger>
-            <TooltipContent>
+            <TooltipContent side="left" className="glass-card border-0">
               <p className="text-xs">{fullDate}</p>
             </TooltipContent>
           </Tooltip>
         </div>
-      </button>
+      </motion.button>
     )
   }
 
   // Grid view
   return (
-    <button
+    <motion.button
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ delay: index * 0.03, duration: 0.3 }}
       onClick={onClick}
-      className={cn(
-        'w-full text-left p-5 rounded-xl border border-[rgba(255,255,255,0.06)]',
-        'bg-[var(--bg-secondary)] hover:bg-[var(--bg-tertiary)]',
-        'transition-all duration-200 group h-full',
-        'focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/50'
-      )}
+      className="glass-card glass-card-hover w-full text-left p-5 rounded-2xl h-full group focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/30"
     >
       <div className="flex flex-col h-full">
         {/* Header */}
-        <div className="flex items-start justify-between mb-3">
+        <div className="flex items-start justify-between mb-4">
           <div className={cn(
-            'w-11 h-11 rounded-xl flex items-center justify-center',
-            `bg-gradient-to-br ${config.gradient}`
+            'relative w-11 h-11 rounded-xl flex items-center justify-center',
+            'bg-gradient-to-br shadow-lg',
+            config.iconBg
           )}>
+            <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-white/10 to-transparent" />
             {isProcessing ? (
-              <Loader2 className="h-5 w-5 text-[var(--text-secondary)] animate-spin" />
+              <SpinnerGap className={cn('h-5 w-5 animate-spin', config.iconColor)} weight="bold" />
             ) : (
-              <Icon className="h-5 w-5 text-[var(--text-secondary)]" />
+              <Icon className={cn('h-5 w-5 relative z-10', config.iconColor)} weight="duotone" />
             )}
           </div>
           <span className={cn(
-            'text-xs px-2 py-0.5 rounded-full border',
-            config.badgeColor
+            'badge-premium',
+            config.badgeBg,
+            config.badgeText,
+            config.badgeBorder,
+            'border'
           )}>
             {config.label}
           </span>
         </div>
 
         {/* Title */}
-        <h3 className="text-base font-medium text-[var(--text-primary)] mb-1 line-clamp-2">
+        <h3 className="text-[15px] font-medium text-[var(--text-primary)] mb-1.5 line-clamp-2 group-hover:text-white transition-colors">
           {item.title}
         </h3>
 
         {/* Preview */}
-        <p className="text-sm text-[var(--text-tertiary)] mb-3 line-clamp-2 flex-1">
+        <p className="text-sm text-[var(--text-tertiary)] mb-4 line-clamp-2 flex-1 group-hover:text-[var(--text-secondary)] transition-colors">
           {previewText}
         </p>
 
         {/* Timestamp */}
         <Tooltip>
           <TooltipTrigger asChild>
-            <div className="flex items-center gap-1.5 text-xs text-[var(--text-tertiary)]">
-              <Clock className="h-3.5 w-3.5" />
+            <div className="timestamp-premium opacity-60 group-hover:opacity-100 transition-opacity">
+              <Clock className="h-3.5 w-3.5" weight="bold" />
               <span>{timeAgo}</span>
             </div>
           </TooltipTrigger>
-          <TooltipContent>
+          <TooltipContent className="glass-card border-0">
             <p className="text-xs">{fullDate}</p>
           </TooltipContent>
         </Tooltip>
       </div>
-    </button>
+    </motion.button>
   )
 }
 
@@ -381,7 +417,6 @@ export default function HistoryPage({ params }: { params: Promise<{ id: string }
         return
       }
 
-      // Fetch notebook title
       const { data: notebook } = await supabase
         .from('notebooks')
         .select('title')
@@ -440,7 +475,6 @@ export default function HistoryPage({ params }: { params: Promise<{ id: string }
   }
 
   const handleItemClick = (item: HistoryItem) => {
-    // Navigate back to notebook with item info in query params
     const typeMap: Record<string, string> = {
       audio: 'audio',
       video: 'video',
@@ -492,9 +526,15 @@ export default function HistoryPage({ params }: { params: Promise<{ id: string }
   const groupOrder = ['Today', 'Yesterday', 'This Week', 'This Month', 'Older']
 
   return (
-    <div className="min-h-screen bg-[var(--bg-primary)]">
+    <div className="min-h-screen bg-[var(--bg-primary)] mesh-gradient relative">
+      {/* Ambient background effects */}
+      <div className="fixed inset-0 pointer-events-none">
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-[var(--accent-primary)]/5 rounded-full blur-3xl" />
+        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-[var(--accent-secondary)]/5 rounded-full blur-3xl" />
+      </div>
+
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-[var(--bg-primary)]/80 backdrop-blur-xl border-b border-[rgba(255,255,255,0.06)]">
+      <div className="sticky top-0 z-10 glass border-b border-[rgba(255,255,255,0.06)]">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -502,45 +542,47 @@ export default function HistoryPage({ params }: { params: Promise<{ id: string }
                 variant="ghost"
                 size="icon"
                 onClick={() => router.push(`/notebooks/${notebookId}`)}
-                className="h-10 w-10 rounded-xl"
+                className="h-10 w-10 rounded-xl glass-card border-0 hover:bg-white/5"
               >
-                <ArrowLeft className="h-5 w-5" />
+                <ArrowLeft className="h-5 w-5" weight="bold" />
               </Button>
               <div>
-                <h1 className="text-xl font-semibold text-[var(--text-primary)] flex items-center gap-2">
-                  <History className="h-5 w-5 text-[var(--accent-primary)]" />
+                <h1 className="text-xl font-semibold text-[var(--text-primary)] flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[var(--accent-primary)]/20 to-[var(--accent-secondary)]/20 flex items-center justify-center">
+                    <ClockCounterClockwise className="h-4 w-4 text-[var(--accent-primary)]" weight="duotone" />
+                  </div>
                   Content History
                 </h1>
                 {notebookTitle && (
-                  <p className="text-sm text-[var(--text-tertiary)]">{notebookTitle}</p>
+                  <p className="text-sm text-[var(--text-tertiary)] mt-0.5">{notebookTitle}</p>
                 )}
               </div>
             </div>
 
             <div className="flex items-center gap-2">
               {/* View toggle */}
-              <div className="flex items-center bg-[var(--bg-secondary)] rounded-lg p-1">
+              <div className="flex items-center glass-card rounded-xl p-1">
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={() => setViewMode('grid')}
                   className={cn(
-                    'h-8 w-8 rounded-md',
-                    viewMode === 'grid' && 'bg-[var(--bg-tertiary)]'
+                    'h-8 w-8 rounded-lg transition-all',
+                    viewMode === 'grid' ? 'bg-white/10 text-white' : 'text-[var(--text-tertiary)] hover:text-white'
                   )}
                 >
-                  <Grid3X3 className="h-4 w-4" />
+                  <SquaresFour className="h-4 w-4" weight={viewMode === 'grid' ? 'fill' : 'regular'} />
                 </Button>
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={() => setViewMode('list')}
                   className={cn(
-                    'h-8 w-8 rounded-md',
-                    viewMode === 'list' && 'bg-[var(--bg-tertiary)]'
+                    'h-8 w-8 rounded-lg transition-all',
+                    viewMode === 'list' ? 'bg-white/10 text-white' : 'text-[var(--text-tertiary)] hover:text-white'
                   )}
                 >
-                  <List className="h-4 w-4" />
+                  <List className="h-4 w-4" weight={viewMode === 'list' ? 'fill' : 'regular'} />
                 </Button>
               </div>
 
@@ -548,137 +590,179 @@ export default function HistoryPage({ params }: { params: Promise<{ id: string }
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
-                    variant="outline"
+                    variant="ghost"
                     className={cn(
-                      'h-10 px-3 rounded-xl',
-                      filterTypes.length > 0 && 'border-[var(--accent-primary)] text-[var(--accent-primary)]'
+                      'h-10 px-4 rounded-xl glass-card border-0 gap-2 btn-premium',
+                      filterTypes.length > 0 && 'ring-1 ring-[var(--accent-primary)]/30'
                     )}
                   >
-                    <Filter className="h-4 w-4 mr-2" />
-                    Filter
+                    <FunnelSimple className="h-4 w-4" weight="bold" />
+                    <span className="text-sm">Filter</span>
                     {filterTypes.length > 0 && (
-                      <span className="ml-1.5 bg-[var(--accent-primary)] text-white text-xs px-1.5 py-0.5 rounded-full">
+                      <span className="ml-1 bg-[var(--accent-primary)] text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-medium">
                         {filterTypes.length}
                       </span>
                     )}
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-52">
+                <DropdownMenuContent align="end" className="w-52 glass-card border-[rgba(255,255,255,0.08)]">
                   {(Object.keys(typeLabels) as HistoryItemType[]).map(type => (
                     <DropdownMenuCheckboxItem
                       key={type}
                       checked={filterTypes.includes(type)}
                       onCheckedChange={() => toggleFilter(type)}
+                      className="rounded-lg"
                     >
                       {typeLabels[type]}
                     </DropdownMenuCheckboxItem>
                   ))}
                   {filterTypes.length > 0 && (
-                    <DropdownMenuCheckboxItem
-                      checked={false}
-                      onCheckedChange={clearFilters}
-                      className="text-[var(--text-tertiary)] border-t border-[rgba(255,255,255,0.06)] mt-1 pt-1"
-                    >
-                      Clear all filters
-                    </DropdownMenuCheckboxItem>
+                    <>
+                      <div className="divider-gradient my-1" />
+                      <DropdownMenuCheckboxItem
+                        checked={false}
+                        onCheckedChange={clearFilters}
+                        className="text-[var(--text-tertiary)] rounded-lg"
+                      >
+                        Clear all filters
+                      </DropdownMenuCheckboxItem>
+                    </>
                   )}
                 </DropdownMenuContent>
               </DropdownMenu>
 
               {/* Refresh button */}
               <Button
-                variant="outline"
+                variant="ghost"
                 size="icon"
                 onClick={() => fetchHistory(true)}
                 disabled={isRefreshing}
-                className="h-10 w-10 rounded-xl"
+                className="h-10 w-10 rounded-xl glass-card border-0 btn-premium"
               >
-                <RefreshCw className={cn('h-4 w-4', isRefreshing && 'animate-spin')} />
+                <ArrowsClockwise className={cn('h-4 w-4', isRefreshing && 'animate-spin')} weight="bold" />
               </Button>
             </div>
           </div>
 
           {/* Stats bar */}
           <div className="flex items-center gap-4 mt-4 text-sm text-[var(--text-tertiary)]">
-            <span>
-              {filterTypes.length > 0
-                ? `Showing ${items.length} of ${total} items`
-                : `${total} total items`}
-            </span>
+            <div className="flex items-center gap-2">
+              <Sparkle className="h-4 w-4 text-[var(--accent-primary)]" weight="duotone" />
+              <span>
+                {filterTypes.length > 0
+                  ? `Showing ${items.length} of ${total} items`
+                  : `${total} total items`}
+              </span>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Content */}
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        {isLoading ? (
-          <div className="flex items-center justify-center py-20">
-            <Loader2 className="h-8 w-8 text-[var(--text-tertiary)] animate-spin" />
-          </div>
-        ) : error ? (
-          <div className="flex flex-col items-center justify-center py-20 text-center">
-            <p className="text-base text-[var(--text-tertiary)] mb-4">{error}</p>
-            <Button
-              variant="outline"
-              onClick={() => fetchHistory()}
-              className="rounded-xl"
+      <div className="max-w-7xl mx-auto px-6 py-8 relative z-0">
+        <AnimatePresence mode="wait">
+          {isLoading ? (
+            <motion.div
+              key="loading"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="flex items-center justify-center py-20"
             >
-              Try again
-            </Button>
-          </div>
-        ) : items.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 text-center">
-            <div className="w-16 h-16 rounded-2xl bg-[var(--bg-secondary)] flex items-center justify-center mb-4">
-              <History className="h-8 w-8 text-[var(--text-tertiary)]" />
-            </div>
-            <h3 className="text-lg font-medium text-[var(--text-primary)] mb-2">
-              {filterTypes.length > 0 ? 'No items match your filters' : 'No content yet'}
-            </h3>
-            <p className="text-sm text-[var(--text-tertiary)] max-w-md">
-              {filterTypes.length > 0
-                ? 'Try removing some filters to see more content'
-                : 'Generate audio, video, study materials, or other content to see them here'}
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-8">
-            {groupOrder.map(group => {
-              const groupItems = groupedItems[group]
-              if (!groupItems || groupItems.length === 0) return null
-
-              return (
-                <div key={group}>
-                  <h2 className="text-sm font-medium text-[var(--text-tertiary)] uppercase tracking-wider mb-4">
-                    {group}
-                  </h2>
-                  {viewMode === 'grid' ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                      {groupItems.map(item => (
-                        <HistoryCard
-                          key={`${item.type}-${item.id}`}
-                          item={item}
-                          onClick={() => handleItemClick(item)}
-                          viewMode={viewMode}
-                        />
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {groupItems.map(item => (
-                        <HistoryCard
-                          key={`${item.type}-${item.id}`}
-                          item={item}
-                          onClick={() => handleItemClick(item)}
-                          viewMode={viewMode}
-                        />
-                      ))}
-                    </div>
-                  )}
+              <div className="glass-card p-8 rounded-2xl flex flex-col items-center gap-4">
+                <SpinnerGap className="h-8 w-8 text-[var(--accent-primary)] animate-spin" weight="bold" />
+                <p className="text-sm text-[var(--text-tertiary)]">Loading history...</p>
+              </div>
+            </motion.div>
+          ) : error ? (
+            <motion.div
+              key="error"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0 }}
+              className="flex flex-col items-center justify-center py-20 text-center"
+            >
+              <div className="glass-card p-8 rounded-2xl flex flex-col items-center gap-4">
+                <p className="text-base text-[var(--text-tertiary)]">{error}</p>
+                <Button
+                  onClick={() => fetchHistory()}
+                  className="rounded-xl btn-premium bg-[var(--accent-primary)] hover:bg-[var(--accent-primary)]/90"
+                >
+                  Try again
+                </Button>
+              </div>
+            </motion.div>
+          ) : items.length === 0 ? (
+            <motion.div
+              key="empty"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0 }}
+              className="flex flex-col items-center justify-center py-20 text-center"
+            >
+              <div className="glass-card p-12 rounded-3xl flex flex-col items-center gap-4 max-w-md">
+                <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[var(--accent-primary)]/20 to-[var(--accent-secondary)]/20 flex items-center justify-center">
+                  <ClockCounterClockwise className="h-10 w-10 text-[var(--accent-primary)]" weight="duotone" />
                 </div>
-              )
-            })}
-          </div>
-        )}
+                <h3 className="text-lg font-semibold text-[var(--text-primary)]">
+                  {filterTypes.length > 0 ? 'No items match your filters' : 'No content yet'}
+                </h3>
+                <p className="text-sm text-[var(--text-tertiary)]">
+                  {filterTypes.length > 0
+                    ? 'Try removing some filters to see more content'
+                    : 'Generate audio, video, study materials, or other content to see them here'}
+                </p>
+              </div>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="content"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="space-y-10"
+            >
+              {groupOrder.map(group => {
+                const groupItems = groupedItems[group]
+                if (!groupItems || groupItems.length === 0) return null
+
+                return (
+                  <div key={group}>
+                    <h2 className="section-header mb-5 flex items-center gap-2">
+                      <span>{group}</span>
+                      <span className="text-[var(--text-tertiary)]/50">({groupItems.length})</span>
+                    </h2>
+                    {viewMode === 'grid' ? (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                        {groupItems.map((item, index) => (
+                          <HistoryCard
+                            key={`${item.type}-${item.id}`}
+                            item={item}
+                            onClick={() => handleItemClick(item)}
+                            viewMode={viewMode}
+                            index={index}
+                          />
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {groupItems.map((item, index) => (
+                          <HistoryCard
+                            key={`${item.type}-${item.id}`}
+                            item={item}
+                            onClick={() => handleItemClick(item)}
+                            viewMode={viewMode}
+                            index={index}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   )

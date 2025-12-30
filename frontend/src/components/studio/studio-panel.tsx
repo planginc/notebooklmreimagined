@@ -3,11 +3,34 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-  Mic, Video, Search, GraduationCap, ChevronDown, ChevronRight,
-  Play, Loader2, BookOpen, ListChecks, FileText, HelpCircle,
-  StickyNote, Plus, Share2, RefreshCw, Clock, AlertCircle,
-  Table, FileSpreadsheet, Presentation, Image, Palette
-} from 'lucide-react'
+  Microphone,
+  VideoCamera,
+  MagnifyingGlass,
+  GraduationCap,
+  CaretDown,
+  CaretRight,
+  Play,
+  SpinnerGap,
+  BookOpen,
+  ListChecks,
+  FileText,
+  Question,
+  Note,
+  Plus,
+  ShareNetwork,
+  ArrowsClockwise,
+  Clock,
+  WarningCircle,
+  Table,
+  ChartBar,
+  PresentationChart,
+  Image,
+  Palette,
+  Cards,
+  TreeStructure,
+  ChatCircleText,
+  Sparkle
+} from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -235,7 +258,7 @@ export function StudioPanel({
           id="audio"
           title="Audio Overview"
           subtitle="Podcast-style discussion"
-          icon={<Mic className="h-5 w-5" />}
+          icon={<Microphone className="h-5 w-5" weight="duotone" />}
           iconGradient="from-orange-500/20 to-red-500/20"
           iconColor="text-orange-500"
           expanded={expandedSection === 'audio'}
@@ -273,7 +296,7 @@ export function StudioPanel({
                 disabled={generatingAudio || selectedSourcesCount === 0}
               >
                 {generatingAudio ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  <SpinnerGap className="h-4 w-4 mr-2 animate-spin" weight="bold" />
                 ) : (
                   <Play className="h-4 w-4 mr-2" />
                 )}
@@ -286,7 +309,7 @@ export function StudioPanel({
                   onClick={onOpenAudio}
                 >
                   View
-                  <ChevronRight className="h-4 w-4 ml-1" />
+                  <CaretRight className="h-4 w-4" weight="bold ml-1" />
                 </Button>
               )}
             </div>
@@ -303,7 +326,7 @@ export function StudioPanel({
           id="video"
           title="Video Overview"
           subtitle="Visual explainer video"
-          icon={<Video className="h-5 w-5" />}
+          icon={<VideoCamera className="h-5 w-5" weight="duotone" />}
           iconGradient="from-purple-500/20 to-pink-500/20"
           iconColor="text-purple-500"
           expanded={expandedSection === 'video'}
@@ -330,9 +353,9 @@ export function StudioPanel({
                 disabled={generatingVideo || selectedSourcesCount === 0}
               >
                 {generatingVideo ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  <SpinnerGap className="h-4 w-4 mr-2 animate-spin" weight="bold" />
                 ) : (
-                  <Video className="h-4 w-4 mr-2" />
+                  <VideoCamera className="h-4 w-4 mr-2" weight="duotone" />
                 )}
                 Generate
               </Button>
@@ -343,7 +366,7 @@ export function StudioPanel({
                   onClick={onOpenVideo}
                 >
                   View
-                  <ChevronRight className="h-4 w-4 ml-1" />
+                  <CaretRight className="h-4 w-4" weight="bold ml-1" />
                 </Button>
               )}
             </div>
@@ -360,7 +383,7 @@ export function StudioPanel({
           id="research"
           title="Deep Research"
           subtitle="Autonomous web research"
-          icon={<Search className="h-5 w-5" />}
+          icon={<MagnifyingGlass className="h-5 w-5" weight="duotone" />}
           iconGradient="from-blue-500/20 to-cyan-500/20"
           iconColor="text-blue-500"
           expanded={expandedSection === 'research'}
@@ -395,9 +418,9 @@ export function StudioPanel({
                 disabled={researching || !researchQuery.trim()}
               >
                 {researching ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  <SpinnerGap className="h-4 w-4 mr-2 animate-spin" weight="bold" />
                 ) : (
-                  <Search className="h-4 w-4 mr-2" />
+                  <MagnifyingGlass className="h-4 w-4 mr-2" weight="duotone" />
                 )}
                 Research
               </Button>
@@ -408,7 +431,7 @@ export function StudioPanel({
                   onClick={onOpenResearch}
                 >
                   View
-                  <ChevronRight className="h-4 w-4 ml-1" />
+                  <CaretRight className="h-4 w-4" weight="bold ml-1" />
                 </Button>
               )}
             </div>
@@ -454,7 +477,7 @@ export function StudioPanel({
                 disabled={selectedSourcesCount === 0}
               />
               <StudyToolButton
-                icon={<HelpCircle className="h-5 w-5" />}
+                icon={<Question className="h-5 w-5" weight="duotone" />}
                 label="FAQ"
                 color="text-teal-500"
                 onClick={() => openConfigDialog('faq')}
@@ -462,7 +485,7 @@ export function StudioPanel({
                 disabled={selectedSourcesCount === 0}
               />
               <StudyToolButton
-                icon={<Share2 className="h-5 w-5" />}
+                icon={<TreeStructure className="h-5 w-5" weight="duotone" />}
                 label="Mind Map"
                 color="text-cyan-500"
                 onClick={() => openConfigDialog('mind-map')}
@@ -488,8 +511,8 @@ export function StudioPanel({
                       flashcards: { icon: <BookOpen className="h-4 w-4" />, color: 'text-blue-500', label: `${material.itemCount || 0} Flashcards` },
                       quiz: { icon: <ListChecks className="h-4 w-4" />, color: 'text-purple-500', label: `${material.itemCount || 0} Quiz Questions` },
                       study_guide: { icon: <FileText className="h-4 w-4" />, color: 'text-orange-500', label: 'Study Guide' },
-                      faq: { icon: <HelpCircle className="h-4 w-4" />, color: 'text-teal-500', label: `${material.itemCount || 0} FAQ Items` },
-                      mind_map: { icon: <Share2 className="h-4 w-4" />, color: 'text-cyan-500', label: 'Mind Map' },
+                      faq: { icon: <ChatCircleText className="h-4 w-4" weight="duotone" />, color: 'text-teal-500', label: `${material.itemCount || 0} FAQ Items` },
+                      mind_map: { icon: <TreeStructure className="h-4 w-4" weight="duotone" />, color: 'text-cyan-500', label: 'Mind Map' },
                     }
                     const info = iconMap[material.type] || { icon: <FileText className="h-4 w-4" />, color: 'text-gray-500', label: material.type }
 
@@ -507,14 +530,14 @@ export function StudioPanel({
                           {isStale && (
                             <Tooltip>
                               <TooltipTrigger asChild>
-                                <AlertCircle className="h-3.5 w-3.5 text-amber-500" />
+                                <WarningCircle className="h-3.5 w-3.5 text-amber-500" weight="fill" />
                               </TooltipTrigger>
                               <TooltipContent>
                                 <p>Sources changed - regenerate for updated content</p>
                               </TooltipContent>
                             </Tooltip>
                           )}
-                          <ChevronRight className="h-4 w-4 text-[var(--text-tertiary)]" />
+                          <CaretRight className="h-4 w-4" weight="bold text-[var(--text-tertiary)]" />
                         </button>
                         <div className="px-3 py-1.5 bg-[var(--bg-tertiary)]/50 border-t border-[rgba(255,255,255,0.05)] flex items-center gap-3 text-[10px] text-[var(--text-tertiary)]">
                           <span className="flex items-center gap-1">
@@ -560,7 +583,7 @@ export function StudioPanel({
                 disabled={selectedSourcesCount === 0}
               />
               <StudyToolButton
-                icon={<FileSpreadsheet className="h-5 w-5" />}
+                icon={<Palette className="h-5 w-5" weight="duotone" />}
                 label="Report"
                 color="text-blue-500"
                 onClick={() => openConfigDialog('report')}
@@ -599,7 +622,7 @@ export function StudioPanel({
                   {creativeOutputs.map((output) => {
                     const typeConfig: Record<string, { icon: React.ReactNode; label: string; color: string }> = {
                       data_table: { icon: <Table className="h-4 w-4" />, label: 'Data Table', color: 'text-emerald-500' },
-                      report: { icon: <FileSpreadsheet className="h-4 w-4" />, label: 'Report', color: 'text-blue-500' },
+                      report: { icon: <ChartBar className="h-4 w-4" weight="duotone" />, label: 'Report', color: 'text-blue-500' },
                       slide_deck: { icon: <Presentation className="h-4 w-4" />, label: 'Slide Deck', color: 'text-violet-500' },
                       infographic: { icon: <Image className="h-4 w-4" />, label: 'Infographic', color: 'text-rose-500' },
                     }
@@ -617,7 +640,7 @@ export function StudioPanel({
                           <p className="text-sm font-medium text-[var(--text-primary)] truncate">{config.label}</p>
                           <p className="text-xs text-[var(--text-tertiary)]">{timeAgo}</p>
                         </div>
-                        <ChevronRight className="h-4 w-4 text-[var(--text-tertiary)]" />
+                        <CaretRight className="h-4 w-4" weight="bold text-[var(--text-tertiary)]" />
                       </button>
                     )
                   })}
@@ -632,7 +655,7 @@ export function StudioPanel({
           id="notes"
           title="Notes"
           subtitle={`${notesCount} saved`}
-          icon={<StickyNote className="h-5 w-5" />}
+          icon={<Note className="h-5 w-5" weight="duotone" />}
           iconGradient="from-amber-500/20 to-yellow-500/20"
           iconColor="text-amber-500"
           expanded={expandedSection === 'notes'}
@@ -654,7 +677,7 @@ export function StudioPanel({
           <div className="space-y-3">
             {notesCount === 0 ? (
               <div className="text-center py-6">
-                <StickyNote className="h-8 w-8 mx-auto mb-2 text-[var(--text-tertiary)]/50" />
+                <Note className="h-8 w-8 mx-auto mb-2 text-[var(--text-tertiary)]/50" weight="duotone" />
                 <p className="text-sm text-[var(--text-tertiary)]">No notes yet</p>
                 <p className="text-xs text-[var(--text-tertiary)] mt-1">Create notes or save chat responses</p>
               </div>
@@ -664,9 +687,9 @@ export function StudioPanel({
                 className="w-full justify-start rounded-lg border-[rgba(255,255,255,0.1)] text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)]"
                 onClick={onOpenNotes}
               >
-                <StickyNote className="h-4 w-4 mr-2 text-amber-500" />
+                <Note className="h-4 w-4 mr-2 text-amber-500" weight="duotone" />
                 View All Notes ({notesCount})
-                <ChevronRight className="h-4 w-4 ml-auto text-[var(--text-tertiary)]" />
+                <CaretRight className="h-4 w-4" weight="bold ml-auto text-[var(--text-tertiary)]" />
               </Button>
             )}
           </div>
@@ -711,24 +734,25 @@ function StudioSection({
   children: React.ReactNode
 }) {
   return (
-    <div className="rounded-xl border border-[rgba(255,255,255,0.1)] bg-[var(--bg-secondary)] overflow-hidden">
-      <div className="flex items-center justify-between p-4 hover:bg-[var(--bg-tertiary)]/50 transition-colors">
+    <div className="glass-card rounded-2xl overflow-hidden">
+      <div className="flex items-center justify-between p-4 hover:bg-white/[0.02] transition-all duration-200 group">
         <button
           onClick={onToggle}
           className="flex items-center gap-3 flex-1"
         >
-          <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${iconGradient} flex items-center justify-center`}>
-            <span className={iconColor}>{icon}</span>
+          <div className={`relative w-10 h-10 rounded-xl bg-gradient-to-br ${iconGradient} flex items-center justify-center shadow-lg`}>
+            <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-white/10 to-transparent" />
+            <span className={`relative z-10 ${iconColor}`}>{icon}</span>
           </div>
           <div className="text-left">
-            <p className="font-medium text-sm text-[var(--text-primary)]">{title}</p>
+            <p className="font-medium text-sm text-[var(--text-primary)] group-hover:text-white transition-colors">{title}</p>
             <p className="text-xs text-[var(--text-tertiary)]">{subtitle}</p>
           </div>
         </button>
         <div className="flex items-center gap-2">
           {action}
-          <button onClick={onToggle} className="p-1">
-            <ChevronDown className={`h-4 w-4 text-[var(--text-tertiary)] transition-transform ${expanded ? 'rotate-180' : ''}`} />
+          <button onClick={onToggle} className="p-1.5 rounded-lg hover:bg-white/5 transition-colors">
+            <CaretDown weight="bold" className={`h-4 w-4 text-[var(--text-tertiary)] transition-transform duration-200 ${expanded ? 'rotate-180' : ''}`} />
           </button>
         </div>
       </div>
@@ -775,7 +799,7 @@ function StudyToolButton({
       className="flex flex-col items-center gap-2 p-4 rounded-xl border border-[rgba(255,255,255,0.1)] bg-[var(--bg-secondary)] hover:bg-[var(--bg-tertiary)]/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
     >
       {loading ? (
-        <Loader2 className="h-5 w-5 animate-spin text-[var(--text-tertiary)]" />
+        <SpinnerGap className="h-5 w-5 animate-spin text-[var(--text-tertiary)]" weight="bold" />
       ) : (
         <span className={color}>{icon}</span>
       )}
@@ -801,7 +825,7 @@ function MaterialButton({
     >
       {icon}
       <span className="text-[var(--text-primary)]">{label}</span>
-      <ChevronRight className="h-4 w-4 ml-auto text-[var(--text-tertiary)]" />
+      <CaretRight className="h-4 w-4" weight="bold ml-auto text-[var(--text-tertiary)]" />
     </button>
   )
 }
