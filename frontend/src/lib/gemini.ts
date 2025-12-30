@@ -923,3 +923,161 @@ export async function checkVideoOperation(
 
   return { done: false }
 }
+
+// ============ NANO BANANA PRO (Gemini 3 Pro Image) ============
+
+export interface GeneratedImage {
+  imageData: string  // Base64-encoded image
+  mimeType: string
+}
+
+// Generate image using Nano Banana Pro (Gemini 3 Pro Image Preview)
+export async function generateImage(
+  prompt: string,
+  aspectRatio: '1:1' | '3:4' | '4:3' | '16:9' | '9:16' | '5:4' = '1:1',
+  imageSize: '1K' | '2K' | '4K' = '1K'
+): Promise<GeneratedImage> {
+  if (!apiKey) throw new Error('Gemini API not configured')
+
+  // Use Nano Banana Pro (Gemini 3 Pro Image Preview)
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-image-preview:generateContent?key=${apiKey}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{
+          parts: [{
+            text: prompt
+          }]
+        }],
+        generationConfig: {
+          responseModalities: ['IMAGE'],
+          imageConfig: {
+            aspectRatio: aspectRatio,
+            imageSize: imageSize
+          }
+        }
+      })
+    }
+  )
+
+  if (!response.ok) {
+    const error = await response.text()
+    console.error('Nano Banana Pro API error:', error)
+    throw new Error(`Image generation failed: ${response.status}`)
+  }
+
+  const data = await response.json()
+
+  // Extract image from response
+  const imagePart = data.candidates?.[0]?.content?.parts?.find(
+    (part: { inlineData?: { mimeType: string; data: string } }) => part.inlineData?.mimeType?.startsWith('image/')
+  )
+
+  if (!imagePart?.inlineData) {
+    throw new Error('No image data in response')
+  }
+
+  return {
+    imageData: imagePart.inlineData.data,
+    mimeType: imagePart.inlineData.mimeType
+  }
+}
+
+// Generate multiple infographic images from content using Nano Banana Pro
+export async function generateInfographicImages(
+  content: string,
+  imageCount: number = 4,
+  imageStyle: string = 'infographic',
+  colorTheme: string = 'modern'
+): Promise<{
+  images: { prompt: string; imageData: string; mimeType: string; title: string }[]
+  concepts: string[]
+}> {
+  const model = getFlashModel()
+  if (!model) throw new Error('Gemini API not configured')
+
+  // Style descriptions for Nano Banana Pro
+  const styleDescriptions: Record<string, string> = {
+    'infographic': 'professional infographic with clean icons, data visualization elements, charts, and modern typography',
+    'illustration': 'vibrant digital illustration with bold colors, stylized graphics, and artistic flair',
+    'diagram': 'technical diagram with precise lines, flowchart elements, and schematic design',
+    'flat': 'flat design aesthetic with geometric shapes, minimal shadows, and bold solid colors',
+    '3d': 'photorealistic 3D render with lighting, depth, materials, and dimensional elements'
+  }
+
+  const themeDescriptions: Record<string, string> = {
+    'modern': 'modern color palette with blues, teals, and clean whites',
+    'colorful': 'vibrant rainbow palette with saturated colors',
+    'minimal': 'monochromatic with subtle grays and single accent color',
+    'professional': 'corporate blues, grays, and professional tones',
+    'dark': 'dark mode with deep backgrounds and neon accents'
+  }
+
+  const styleDesc = styleDescriptions[imageStyle] || styleDescriptions['infographic']
+  const themeDesc = themeDescriptions[colorTheme] || themeDescriptions['modern']
+
+  // First, extract key concepts to visualize
+  const conceptPrompt = `You are an expert at visual communication and creating prompts for Nano Banana Pro (Gemini 3 Pro Image). Based on the following content, identify ${imageCount} key concepts that would make excellent infographic images.
+
+CONTENT:
+${content.slice(0, 50000)}
+
+For each concept, create a detailed image generation prompt optimized for Nano Banana Pro. The model excels at:
+- Rendering text within images (include relevant labels, titles, or short text)
+- Complex compositions with multiple visual elements
+- High-fidelity graphics with precise details
+- Professional design aesthetics
+
+Style requirements:
+- Visual style: ${styleDesc}
+- Color theme: ${themeDesc}
+- Include text labels and annotations where helpful
+- Design should be visually striking and professional
+- Avoid photorealistic people/faces
+
+Return ONLY a valid JSON array with no markdown formatting, code blocks, or extra text. Format:
+[
+  {
+    "title": "Concept Title",
+    "prompt": "Create a ${imageStyle} style image about [concept]. Include [specific visual elements]. The design should feature ${themeDesc}. Add text labels showing [key terms]. Style: ${styleDesc}. High quality, professional design."
+  }
+]`
+
+  const result = await model.generateContent(conceptPrompt)
+  const text = result.response.text()
+
+  const jsonMatch = text.match(/\[[\s\S]*\]/)
+  if (!jsonMatch) throw new Error('Invalid response format')
+
+  const concepts: { title: string; prompt: string }[] = JSON.parse(jsonMatch[0])
+
+  // Generate images for each concept using Nano Banana Pro
+  const images: { prompt: string; imageData: string; mimeType: string; title: string }[] = []
+
+  for (const concept of concepts.slice(0, imageCount)) {
+    try {
+      // Add a small delay between requests to avoid rate limiting
+      if (images.length > 0) {
+        await new Promise(resolve => setTimeout(resolve, 1000))
+      }
+
+      const image = await generateImage(concept.prompt, '1:1', '1K')
+      images.push({
+        title: concept.title,
+        prompt: concept.prompt,
+        imageData: image.imageData,
+        mimeType: image.mimeType
+      })
+    } catch (error) {
+      console.error(`Failed to generate image for "${concept.title}":`, error)
+      // Continue with other images even if one fails
+    }
+  }
+
+  return {
+    images,
+    concepts: concepts.map(c => c.title)
+  }
+}

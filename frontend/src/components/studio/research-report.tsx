@@ -4,11 +4,12 @@ import { useState } from 'react'
 import { motion } from 'framer-motion'
 import {
   Search, ExternalLink, Copy, Check, Clock, Loader2,
-  FileText, Globe, AlertCircle, BookOpen
+  FileText, Globe, AlertCircle, BookOpen, Download
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Badge } from '@/components/ui/badge'
+import { downloadAsPDF, generateFilename } from '@/lib/export-utils'
 
 interface ResearchCitation {
   title: string
@@ -38,12 +39,54 @@ interface ResearchReportProps {
 export function ResearchReport({ research, isResearching, onClose }: ResearchReportProps) {
   const [copied, setCopied] = useState(false)
   const [activeTab, setActiveTab] = useState<'report' | 'sources'>('report')
+  const [isExporting, setIsExporting] = useState(false)
 
   const copyReport = async () => {
     if (research?.report_content) {
       await navigator.clipboard.writeText(research.report_content)
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
+    }
+  }
+
+  const handleDownloadPDF = async () => {
+    if (!research?.report_content) return
+    setIsExporting(true)
+    try {
+      // Parse the markdown content into sections
+      const lines = research.report_content.split('\n')
+      const sections: { heading: string; content: string }[] = []
+      let currentSection = { heading: '', content: '' }
+
+      for (const line of lines) {
+        if (line.startsWith('# ') || line.startsWith('## ')) {
+          if (currentSection.heading || currentSection.content) {
+            sections.push(currentSection)
+          }
+          currentSection = {
+            heading: line.replace(/^#+ /, ''),
+            content: ''
+          }
+        } else if (line.trim()) {
+          currentSection.content += line.replace(/\*\*/g, '').replace(/\*/g, '') + '\n'
+        }
+      }
+      if (currentSection.heading || currentSection.content) {
+        sections.push(currentSection)
+      }
+
+      await downloadAsPDF(
+        {
+          title: `Research: ${research.query}`,
+          subtitle: `${research.sources_analyzed_count || 0} sources analyzed • ${research.mode === 'deep' ? 'Deep' : 'Fast'} mode`,
+          sections: sections.length > 0 ? sections : [{ heading: 'Report', content: research.report_content }]
+        },
+        generateFilename('research-report')
+      )
+    } catch (error) {
+      console.error('Export failed:', error)
+    } finally {
+      setIsExporting(false)
     }
   }
 

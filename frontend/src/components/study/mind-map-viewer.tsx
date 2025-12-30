@@ -1,9 +1,10 @@
 'use client'
 
-import { useState, useRef, useEffect, useCallback } from 'react'
+import { useState, useRef, useCallback } from 'react'
 import { motion } from 'framer-motion'
-import { ZoomIn, ZoomOut, Maximize2, RotateCcw, Download, Share2, Plus, Minus, Home } from 'lucide-react'
+import { ZoomIn, ZoomOut, RotateCcw, Download, Share2, Plus, Minus, Home } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { exportMindMapToPNG, generateFilename } from '@/lib/export-utils'
 
 interface MindMapNode {
   id: string
@@ -39,12 +40,27 @@ const LEVEL_COLORS = [
 
 export function MindMapViewer({ title, nodes, onClose }: MindMapViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null)
+  const svgRef = useRef<SVGSVGElement>(null)
   const [scale, setScale] = useState(1)
   const [position, setPosition] = useState({ x: 0, y: 0 })
   const [isDragging, setIsDragging] = useState(false)
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
   const [selectedNode, setSelectedNode] = useState<MindMapNode | null>(null)
   const [collapsedNodes, setCollapsedNodes] = useState<Set<string>>(new Set())
+  const [isExporting, setIsExporting] = useState(false)
+
+  // Export handler
+  const handleExportPNG = async () => {
+    if (!svgRef.current) return
+    setIsExporting(true)
+    try {
+      await exportMindMapToPNG(svgRef.current, title, generateFilename('mind-map'))
+    } catch (error) {
+      console.error('Export failed:', error)
+    } finally {
+      setIsExporting(false)
+    }
+  }
 
   // Calculate node positions in a radial layout
   const calculatePositions = useCallback((): NodePosition[] => {
@@ -216,6 +232,16 @@ export function MindMapViewer({ title, nodes, onClose }: MindMapViewerProps) {
           >
             <RotateCcw className="h-4 w-4" />
           </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleExportPNG}
+            disabled={isExporting}
+            className="h-8 w-8"
+            title="Download as PNG"
+          >
+            <Download className="h-4 w-4" />
+          </Button>
         </div>
       </div>
 
@@ -231,6 +257,7 @@ export function MindMapViewer({ title, nodes, onClose }: MindMapViewerProps) {
         onWheel={handleWheel}
       >
         <svg
+          ref={svgRef}
           width="100%"
           height="100%"
           viewBox="0 0 800 600"

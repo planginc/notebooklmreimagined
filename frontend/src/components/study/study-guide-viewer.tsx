@@ -2,9 +2,10 @@
 
 import React, { useState } from 'react'
 import { motion } from 'framer-motion'
-import { FileText, ChevronRight, BookOpen, List, Bookmark, Copy, Check } from 'lucide-react'
+import { FileText, ChevronRight, BookOpen, List, Bookmark, Copy, Check, Download } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { exportStudyGuideToPDF, generateFilename } from '@/lib/export-utils'
 
 interface StudyGuideSection {
   heading: string
@@ -78,6 +79,19 @@ export function StudyGuideViewer({ guide, onClose }: StudyGuideViewerProps) {
   const [showTOC, setShowTOC] = useState(true)
   const [copied, setCopied] = useState(false)
   const [bookmarkedSections, setBookmarkedSections] = useState<Set<number>>(new Set())
+  const [isExporting, setIsExporting] = useState(false)
+
+  // Export handler
+  const handleExportPDF = async () => {
+    setIsExporting(true)
+    try {
+      await exportStudyGuideToPDF(guide, generateFilename('study-guide'))
+    } catch (error) {
+      console.error('Export failed:', error)
+    } finally {
+      setIsExporting(false)
+    }
+  }
 
   const toggleBookmark = (idx: number) => {
     const newBookmarks = new Set(bookmarkedSections)
@@ -119,15 +133,27 @@ export function StudyGuideViewer({ guide, onClose }: StudyGuideViewerProps) {
               <p className="text-sm text-[var(--text-tertiary)]">{guide.sections.length} sections</p>
             </div>
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={copyGuide}
-            className="text-[var(--text-secondary)]"
-          >
-            {copied ? <Check className="h-4 w-4 mr-1.5" /> : <Copy className="h-4 w-4 mr-1.5" />}
-            {copied ? 'Copied!' : 'Copy'}
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={copyGuide}
+              className="text-[var(--text-secondary)]"
+            >
+              {copied ? <Check className="h-4 w-4 mr-1.5" /> : <Copy className="h-4 w-4 mr-1.5" />}
+              {copied ? 'Copied!' : 'Copy'}
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleExportPDF}
+              disabled={isExporting}
+              className="text-[var(--text-secondary)]"
+            >
+              <Download className="h-4 w-4 mr-1.5" />
+              {isExporting ? 'Exporting...' : 'PDF'}
+            </Button>
+          </div>
         </div>
 
         {/* Table of Contents Toggle */}

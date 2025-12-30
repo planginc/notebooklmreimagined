@@ -47,6 +47,9 @@ export interface GenerationConfig {
   slideCount?: number
   style?: string
   sourceIds?: string[]
+  // Infographic-specific
+  imageCount?: number
+  imageStyle?: string
 }
 
 interface Source {
@@ -107,6 +110,8 @@ export function GenerationConfigDialog({
     slideCount: 8,
     style: 'modern',
     sourceIds: [],
+    imageCount: 4,
+    imageStyle: 'infographic',
   })
 
   const [selectedSources, setSelectedSources] = useState<string[]>([])
@@ -268,25 +273,68 @@ export function GenerationConfigDialog({
         </div>
       )}
 
-      {/* Style for infographic */}
+      {/* Infographic settings */}
       {type === 'infographic' && (
-        <div className="space-y-3">
-          <Label>Visual Style</Label>
-          <Select
-            value={config.style}
-            onValueChange={(value) => setConfig(prev => ({ ...prev, style: value }))}
-          >
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="modern">Modern & Clean</SelectItem>
-              <SelectItem value="colorful">Colorful & Bold</SelectItem>
-              <SelectItem value="minimal">Minimal & Simple</SelectItem>
-              <SelectItem value="professional">Professional & Corporate</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+        <>
+          {/* Image count slider */}
+          <div className="space-y-3">
+            <div className="flex justify-between">
+              <Label>Number of images</Label>
+              <span className="text-sm text-muted-foreground">{config.imageCount}</span>
+            </div>
+            <Slider
+              value={[config.imageCount || 4]}
+              onValueChange={([value]) => setConfig(prev => ({ ...prev, imageCount: value }))}
+              min={1}
+              max={8}
+              step={1}
+              className="w-full"
+            />
+            <p className="text-xs text-muted-foreground">
+              Each image visualizes a key concept from your sources
+            </p>
+          </div>
+
+          {/* Image style */}
+          <div className="space-y-3">
+            <Label>Image Style</Label>
+            <Select
+              value={config.imageStyle}
+              onValueChange={(value) => setConfig(prev => ({ ...prev, imageStyle: value }))}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="infographic">Infographic (charts & icons)</SelectItem>
+                <SelectItem value="illustration">Digital Illustration</SelectItem>
+                <SelectItem value="diagram">Technical Diagram</SelectItem>
+                <SelectItem value="flat">Flat Design</SelectItem>
+                <SelectItem value="3d">3D Render</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Visual Style (layout) */}
+          <div className="space-y-3">
+            <Label>Color Theme</Label>
+            <Select
+              value={config.style}
+              onValueChange={(value) => setConfig(prev => ({ ...prev, style: value }))}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="modern">Modern & Clean</SelectItem>
+                <SelectItem value="colorful">Colorful & Bold</SelectItem>
+                <SelectItem value="minimal">Minimal & Simple</SelectItem>
+                <SelectItem value="professional">Professional & Corporate</SelectItem>
+                <SelectItem value="dark">Dark Mode</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </>
       )}
     </>
   )

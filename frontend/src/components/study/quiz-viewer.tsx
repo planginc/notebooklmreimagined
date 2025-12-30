@@ -4,10 +4,17 @@ import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Check, X, ChevronRight, RotateCcw, Trophy, Target,
-  BookOpen, AlertCircle, ArrowRight, ListChecks
+  BookOpen, AlertCircle, ArrowRight, ListChecks, Download, FileSpreadsheet, FileText
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { exportQuizToExcel, exportQuizToPDF, generateFilename } from '@/lib/export-utils'
 
 interface QuizQuestion {
   id: string
@@ -36,6 +43,47 @@ export function QuizViewer({ questions, onClose }: QuizViewerProps) {
   const [state, setState] = useState<QuizState>('question')
   const [results, setResults] = useState<QuizResult[]>([])
   const [showHint, setShowHint] = useState(false)
+  const [isExporting, setIsExporting] = useState(false)
+
+  // Export handlers
+  const handleExportExcel = async () => {
+    setIsExporting(true)
+    try {
+      await exportQuizToExcel(
+        questions.map(q => ({
+          question: q.question,
+          options: q.options,
+          correct_index: q.correct_index,
+          explanation: q.explanation
+        })),
+        generateFilename('quiz')
+      )
+    } catch (error) {
+      console.error('Export failed:', error)
+    } finally {
+      setIsExporting(false)
+    }
+  }
+
+  const handleExportPDF = async () => {
+    setIsExporting(true)
+    try {
+      await exportQuizToPDF(
+        questions.map(q => ({
+          question: q.question,
+          options: q.options,
+          correct_index: q.correct_index,
+          explanation: q.explanation
+        })),
+        'Quiz',
+        generateFilename('quiz')
+      )
+    } catch (error) {
+      console.error('Export failed:', error)
+    } finally {
+      setIsExporting(false)
+    }
+  }
 
   const currentQuestion = questions[currentIndex]
   const progress = ((currentIndex) / questions.length) * 100
@@ -221,7 +269,7 @@ export function QuizViewer({ questions, onClose }: QuizViewerProps) {
         </div>
 
         {/* Actions */}
-        <div className="flex gap-3">
+        <div className="flex gap-3 flex-wrap justify-center">
           <Button onClick={resetQuiz} variant="outline" className="rounded-xl">
             <RotateCcw className="h-4 w-4 mr-2" />
             Retake Quiz
@@ -232,6 +280,24 @@ export function QuizViewer({ questions, onClose }: QuizViewerProps) {
               Review Wrong Answers
             </Button>
           )}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="rounded-xl" disabled={isExporting}>
+                <Download className="h-4 w-4 mr-2" />
+                {isExporting ? 'Exporting...' : 'Export'}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="center" className="bg-[var(--bg-secondary)] border-[rgba(255,255,255,0.1)]">
+              <DropdownMenuItem onClick={handleExportExcel} className="cursor-pointer">
+                <FileSpreadsheet className="h-4 w-4 mr-2 text-green-500" />
+                Download as Excel (.xlsx)
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleExportPDF} className="cursor-pointer">
+                <FileText className="h-4 w-4 mr-2 text-red-500" />
+                Download as PDF
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </motion.div>
     )

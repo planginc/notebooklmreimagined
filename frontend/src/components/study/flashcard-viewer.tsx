@@ -2,9 +2,16 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ChevronLeft, ChevronRight, RotateCcw, Shuffle, Check, X, BookOpen, Keyboard } from 'lucide-react'
+import { ChevronLeft, ChevronRight, RotateCcw, Shuffle, Check, X, BookOpen, Keyboard, Download, FileSpreadsheet, FileText } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { exportFlashcardsToExcel, exportFlashcardsToPDF, generateFilename } from '@/lib/export-utils'
 
 interface Flashcard {
   id: string
@@ -24,6 +31,37 @@ export function FlashcardViewer({ flashcards, onClose }: FlashcardViewerProps) {
   const [unknownCards, setUnknownCards] = useState<Set<string>>(new Set())
   const [showControls, setShowControls] = useState(true)
   const [shuffledCards, setShuffledCards] = useState<Flashcard[]>(flashcards)
+  const [isExporting, setIsExporting] = useState(false)
+
+  // Export handlers
+  const handleExportExcel = async () => {
+    setIsExporting(true)
+    try {
+      await exportFlashcardsToExcel(
+        flashcards.map(c => ({ front: c.front, back: c.back })),
+        generateFilename('flashcards')
+      )
+    } catch (error) {
+      console.error('Export failed:', error)
+    } finally {
+      setIsExporting(false)
+    }
+  }
+
+  const handleExportPDF = async () => {
+    setIsExporting(true)
+    try {
+      await exportFlashcardsToPDF(
+        flashcards.map(c => ({ front: c.front, back: c.back })),
+        'Flashcards',
+        generateFilename('flashcards')
+      )
+    } catch (error) {
+      console.error('Export failed:', error)
+    } finally {
+      setIsExporting(false)
+    }
+  }
 
   const currentCard = shuffledCards[currentIndex]
   const progress = ((currentIndex + 1) / shuffledCards.length) * 100
@@ -323,6 +361,29 @@ export function FlashcardViewer({ flashcards, onClose }: FlashcardViewerProps) {
             <RotateCcw className="h-4 w-4 mr-1.5" />
             Reset
           </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                disabled={isExporting}
+                className="text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+              >
+                <Download className="h-4 w-4 mr-1.5" />
+                {isExporting ? 'Exporting...' : 'Export'}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="bg-[var(--bg-secondary)] border-[rgba(255,255,255,0.1)]">
+              <DropdownMenuItem onClick={handleExportExcel} className="cursor-pointer">
+                <FileSpreadsheet className="h-4 w-4 mr-2 text-green-500" />
+                Download as Excel (.xlsx)
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleExportPDF} className="cursor-pointer">
+                <FileText className="h-4 w-4 mr-2 text-red-500" />
+                Download as PDF
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
 
         {unknownCards.size > 0 && (

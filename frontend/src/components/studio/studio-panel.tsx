@@ -50,6 +50,7 @@ export interface SourceInfo {
 }
 
 interface StudioPanelProps {
+  notebookId: string
   selectedSourcesCount: number
   selectedSourceIds: string[]
   sources?: SourceInfo[]
@@ -111,6 +112,7 @@ interface StudioPanelProps {
 }
 
 export function StudioPanel({
+  notebookId,
   selectedSourcesCount,
   selectedSourceIds,
   sources = [],

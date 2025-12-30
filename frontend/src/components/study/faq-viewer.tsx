@@ -2,9 +2,16 @@
 
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { HelpCircle, ChevronDown, Copy, Check, Search, X } from 'lucide-react'
+import { HelpCircle, ChevronDown, Copy, Check, Search, X, Download, FileSpreadsheet, FileText } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { exportFAQToExcel, exportFAQToPDF, generateFilename } from '@/lib/export-utils'
 
 interface FAQItem {
   question: string
@@ -20,6 +27,30 @@ export function FAQViewer({ items, onClose }: FAQViewerProps) {
   const [expandedIndex, setExpandedIndex] = useState<number | null>(0)
   const [searchQuery, setSearchQuery] = useState('')
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null)
+  const [isExporting, setIsExporting] = useState(false)
+
+  // Export handlers
+  const handleExportExcel = async () => {
+    setIsExporting(true)
+    try {
+      await exportFAQToExcel(items, generateFilename('faq'))
+    } catch (error) {
+      console.error('Export failed:', error)
+    } finally {
+      setIsExporting(false)
+    }
+  }
+
+  const handleExportPDF = async () => {
+    setIsExporting(true)
+    try {
+      await exportFAQToPDF(items, 'Frequently Asked Questions', generateFilename('faq'))
+    } catch (error) {
+      console.error('Export failed:', error)
+    } finally {
+      setIsExporting(false)
+    }
+  }
 
   const filteredItems = items.filter(item =>
     item.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -45,14 +76,34 @@ export function FAQViewer({ items, onClose }: FAQViewerProps) {
     <div className="flex flex-col h-full">
       {/* Header */}
       <div className="mb-6">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-teal-500/20 to-cyan-500/20 flex items-center justify-center">
-            <HelpCircle className="h-6 w-6 text-teal-500" />
+        <div className="flex items-center justify-between gap-3 mb-4">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-teal-500/20 to-cyan-500/20 flex items-center justify-center">
+              <HelpCircle className="h-6 w-6 text-teal-500" />
+            </div>
+            <div>
+              <h2 className="text-xl font-semibold text-[var(--text-primary)]">Frequently Asked Questions</h2>
+              <p className="text-sm text-[var(--text-tertiary)]">{items.length} questions from your sources</p>
+            </div>
           </div>
-          <div>
-            <h2 className="text-xl font-semibold text-[var(--text-primary)]">Frequently Asked Questions</h2>
-            <p className="text-sm text-[var(--text-tertiary)]">{items.length} questions from your sources</p>
-          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" disabled={isExporting} className="text-[var(--text-secondary)]">
+                <Download className="h-4 w-4 mr-1.5" />
+                {isExporting ? 'Exporting...' : 'Export'}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="bg-[var(--bg-secondary)] border-[rgba(255,255,255,0.1)]">
+              <DropdownMenuItem onClick={handleExportExcel} className="cursor-pointer">
+                <FileSpreadsheet className="h-4 w-4 mr-2 text-green-500" />
+                Download as Excel (.xlsx)
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleExportPDF} className="cursor-pointer">
+                <FileText className="h-4 w-4 mr-2 text-red-500" />
+                Download as PDF
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
 
         {/* Search */}

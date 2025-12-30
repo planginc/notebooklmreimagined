@@ -5,6 +5,7 @@ import {
   generateReport,
   generateSlideDeck,
   generateInfographic,
+  generateInfographicImages,
   isGeminiConfigured
 } from '@/lib/gemini'
 
@@ -142,7 +143,10 @@ export async function POST(
       focus_area,
       tone,
       slide_count,
-      style
+      style,
+      // Infographic-specific
+      image_count,
+      image_style
     } = body
 
     // Get source content
@@ -214,8 +218,19 @@ export async function POST(
         resultContent = await generateSlideDeck(truncatedContent, enhancedInstructions || undefined)
         costUsd = 0.02
       } else if (type === 'infographic') {
-        resultContent = await generateInfographic(truncatedContent, enhancedInstructions || undefined)
-        costUsd = 0.03
+        // Generate infographic images using Nano Banana Pro (Gemini 3 Pro Image)
+        const count = image_count || 4
+        const imgStyle = image_style || 'infographic'
+        const colorTheme = style || 'modern'
+
+        resultContent = await generateInfographicImages(
+          truncatedContent,
+          count,
+          imgStyle,
+          colorTheme
+        )
+        modelUsed = 'gemini-3-pro-image-preview'
+        costUsd = count * 0.04  // ~$0.04 per image for Nano Banana Pro
       } else {
         // Update record to failed
         await supabase

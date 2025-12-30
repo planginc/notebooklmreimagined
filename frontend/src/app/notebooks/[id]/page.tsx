@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useRef } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { createClient, Notebook, Source, ChatMessage } from '@/lib/supabase'
 import { chatApi } from '@/lib/api'
@@ -27,7 +27,8 @@ import {
 import {
   ArrowLeft, Loader2, Sparkles, X, RotateCcw,
   BookOpen, ListChecks, FileText, HelpCircle, Mic, Video, Search, Share2,
-  Maximize2, Minimize2, Table, FileSpreadsheet, Presentation, Image as ImageIcon
+  Maximize2, Minimize2, Table, FileSpreadsheet, Presentation, Image as ImageIcon,
+  History
 } from 'lucide-react'
 // Toast notifications removed per user request
 // import { toast } from 'sonner'
@@ -50,6 +51,7 @@ import { MindMapViewer } from '@/components/study/mind-map-viewer'
 import { AudioPlayer } from '@/components/studio/audio-player'
 import { VideoPlayer } from '@/components/studio/video-player'
 import { ResearchReport } from '@/components/studio/research-report'
+import { InfographicViewer } from '@/components/studio/infographic-viewer'
 
 interface LocalNote {
   id: string
@@ -66,6 +68,7 @@ interface LocalNote {
 export default function NotebookPage() {
   const params = useParams()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const notebookId = params.id as string
   const supabase = createClient()
 
@@ -154,12 +157,17 @@ export default function NotebookPage() {
     slides: Array<{ slide_number: number; title: string; content_type: string; main_content: string; bullet_points?: string[]; speaker_notes?: string }>
     theme_suggestion: string
   } | null>(null)
+  // Infographic data - supports new image-based format
   const [infographicData, setInfographicData] = useState<{
-    title: string
+    // New image-based format
+    images?: Array<{ title: string; prompt: string; imageData: string; mimeType: string }>
+    concepts?: string[]
+    // Legacy format (for backward compatibility)
+    title?: string
     subtitle?: string
-    color_scheme: string[]
-    sections: Array<{ section_type: string; title?: string; content: Record<string, unknown> }>
-    style_suggestion: string
+    color_scheme?: string[]
+    sections?: Array<{ section_type: string; title?: string; content: Record<string, unknown> }>
+    style_suggestion?: string
   } | null>(null)
 
   // Study materials metadata (for UI display)
@@ -350,6 +358,39 @@ export default function NotebookPage() {
       localStorage.setItem(`notebook-${notebookId}-selected-sources`, JSON.stringify(selectedArray))
     }
   }, [selectedSources, notebookId, loading, sources.length])
+
+  // Handle view and itemId query params from history page navigation
+  useEffect(() => {
+    const view = searchParams.get('view')
+    const itemId = searchParams.get('itemId')
+
+    if (view && !loading) {
+      // Map view param to activeStudyType
+      const typeMap: Record<string, typeof activeStudyType> = {
+        audio: 'audio',
+        video: 'video',
+        research: 'research',
+        datatable: 'datatable',
+        report: 'report',
+        slides: 'slides',
+        infographic: 'infographic',
+        flashcards: 'flashcards',
+        quiz: 'quiz',
+        guide: 'guide',
+        faq: 'faq',
+        mindmap: 'mindmap',
+        notes: 'notes',
+      }
+      const studyType = typeMap[view]
+      if (studyType) {
+        setActiveStudyType(studyType)
+        setStudySheetOpen(true)
+
+        // Clear the query params after handling
+        router.replace(`/notebooks/${notebookId}`, { scroll: false })
+      }
+    }
+  }, [searchParams, loading, notebookId, router])
 
   // Fetch existing audio/video/research content
   const fetchGeneratedContent = async () => {
@@ -862,10 +903,11 @@ export default function NotebookPage() {
   // Research generation
   const runResearch = async () => {
     if (!researchQuery.trim()) {
-      
       return
     }
 
+    // Clear old research to prevent showing cached results
+    setGeneratedResearch(null)
     setResearching(true)
     setActiveStudyType('research')
     setStudySheetOpen(true)
@@ -885,14 +927,15 @@ export default function NotebookPage() {
       })
       const result = await response.json()
       if (result.error) {
-        
+        console.error('Research failed:', result.error)
+        alert(`Research failed: ${result.error}`)
       } else if (result.data) {
         setGeneratedResearch(result.data)
-        
         setResearchQuery('')
       }
-    } catch {
-      
+    } catch (error) {
+      console.error('Research error:', error)
+      alert('Research failed. Please try again.')
     }
     setResearching(false)
   }
@@ -1075,13 +1118,14 @@ export default function NotebookPage() {
     if (sourceIds.length === 0) return
 
     // Set loading state based on type
-    const setLoading = {
+    const setLoadingMap: Record<string, ((val: boolean) => void) | undefined> = {
       'flashcards': setGeneratingFlashcards,
       'quiz': setGeneratingQuiz,
       'study-guide': setGeneratingStudyGuide,
       'faq': setGeneratingFaq,
       'mind-map': setGeneratingMindMap,
-    }[config.type]
+    }
+    const setLoading = setLoadingMap[config.type]
     setLoading?.(true)
 
     try {
@@ -1174,13 +1218,14 @@ export default function NotebookPage() {
     if (sourceIds.length === 0) return
 
     // Set loading state based on type
-    const setLoading = {
+    const setLoadingMap2: Record<string, ((val: boolean) => void) | undefined> = {
       'data_table': setGeneratingDataTable,
       'report': setGeneratingReport,
       'slide_deck': setGeneratingSlideDeck,
       'infographic': setGeneratingInfographic,
-    }[config.type]
-    setLoading?.(true)
+    }
+    const setLoading2 = setLoadingMap2[config.type]
+    setLoading2?.(true)
 
     try {
       const { data: { session } } = await supabase.auth.getSession()
@@ -1198,6 +1243,9 @@ export default function NotebookPage() {
       if (config.tone) requestBody.tone = config.tone
       if (config.slideCount) requestBody.slide_count = config.slideCount
       if (config.style) requestBody.style = config.style
+      // Infographic-specific options
+      if (config.imageCount) requestBody.image_count = config.imageCount
+      if (config.imageStyle) requestBody.image_style = config.imageStyle
 
       const response = await fetch(`/api/notebooks/${notebookId}/studio`, {
         method: 'POST',
@@ -1240,7 +1288,7 @@ export default function NotebookPage() {
     } catch (error) {
       console.error('Creative output generation failed:', error)
     } finally {
-      setLoading?.(false)
+      setLoading2?.(false)
     }
   }
 
@@ -1468,6 +1516,15 @@ export default function NotebookPage() {
               {selectedSources.size} selected
             </Badge>
           )}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => router.push(`/notebooks/${notebookId}/history`)}
+            className="h-9 px-3 rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] gap-2"
+          >
+            <History className="h-4 w-4" />
+            <span className="hidden sm:inline">History</span>
+          </Button>
         </div>
       </motion.header>
 
@@ -1508,6 +1565,7 @@ export default function NotebookPage() {
           }
           rightPanel={
             <StudioPanel
+              notebookId={notebookId}
               selectedSourcesCount={selectedSources.size}
               selectedSourceIds={Array.from(selectedSources)}
               sources={sources.map(s => ({ id: s.id, name: s.name }))}
@@ -1724,7 +1782,7 @@ export default function NotebookPage() {
               {activeStudyType === 'datatable' && 'Structured data extracted from your sources'}
               {activeStudyType === 'report' && 'Professional document from your sources'}
               {activeStudyType === 'slides' && 'Presentation slides from your sources'}
-              {activeStudyType === 'infographic' && 'Visual infographic from your sources'}
+              {activeStudyType === 'infographic' && 'AI-generated images visualizing key concepts'}
               {activeStudyType === 'audio' && 'Podcast-style audio discussion'}
               {activeStudyType === 'video' && 'Visual explainer video'}
               {activeStudyType === 'research' && 'Deep web research findings'}
@@ -1904,186 +1962,203 @@ export default function NotebookPage() {
 
             {/* Infographic View */}
             {activeStudyType === 'infographic' && infographicData && (
-              <div className="space-y-6">
-                {/* Header Section */}
-                <div
-                  className="p-8 rounded-2xl text-center"
-                  style={{
-                    background: `linear-gradient(135deg, ${infographicData.color_scheme[0]}20 0%, ${infographicData.color_scheme[1]}20 100%)`,
-                    borderLeft: `4px solid ${infographicData.color_scheme[0]}`
+              // Check if it's the new image-based format
+              infographicData.images && infographicData.images.length > 0 ? (
+                <InfographicViewer
+                  data={{
+                    images: infographicData.images,
+                    concepts: infographicData.concepts || []
                   }}
-                >
-                  <h2 className="text-2xl font-bold text-[var(--text-primary)]">{infographicData.title}</h2>
-                  {infographicData.subtitle && (
-                    <p className="text-base text-[var(--text-secondary)] mt-2">{infographicData.subtitle}</p>
-                  )}
+                  onClose={() => setStudySheetOpen(false)}
+                />
+              ) : infographicData.color_scheme && infographicData.sections ? (
+                // Legacy format (backward compatibility)
+                <div className="space-y-6">
+                  {/* Header Section */}
+                  <div
+                    className="p-8 rounded-2xl text-center"
+                    style={{
+                      background: `linear-gradient(135deg, ${infographicData.color_scheme[0]}20 0%, ${infographicData.color_scheme[1]}20 100%)`,
+                      borderLeft: `4px solid ${infographicData.color_scheme[0]}`
+                    }}
+                  >
+                    <h2 className="text-2xl font-bold text-[var(--text-primary)]">{infographicData.title}</h2>
+                    {infographicData.subtitle && (
+                      <p className="text-base text-[var(--text-secondary)] mt-2">{infographicData.subtitle}</p>
+                    )}
+                  </div>
+
+                  {/* Render each section based on type */}
+                  {infographicData.sections.map((section, idx) => {
+                    const sectionColor = infographicData.color_scheme![idx % infographicData.color_scheme!.length]
+                    const content = section.content as Record<string, unknown>
+
+                    // Stats Section
+                    if (section.section_type === 'stats' && content.items) {
+                      const items = content.items as Array<{ value: string; label: string; icon?: string }>
+                      return (
+                        <div key={idx} className="p-6 rounded-xl bg-[var(--bg-tertiary)]">
+                          {section.title && <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-4">{section.title}</h3>}
+                          <div className="grid grid-cols-3 gap-4">
+                            {items.map((item, i) => (
+                              <div key={i} className="text-center p-4 rounded-lg" style={{ backgroundColor: `${sectionColor}15` }}>
+                                <div className="text-2xl font-bold" style={{ color: sectionColor }}>{item.value}</div>
+                                <div className="text-sm text-[var(--text-secondary)] mt-1">{item.label}</div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )
+                    }
+
+                    // Timeline Section
+                    if (section.section_type === 'timeline' && content.events) {
+                      const events = content.events as Array<{ date: string; title: string; description?: string }>
+                      return (
+                        <div key={idx} className="p-6 rounded-xl bg-[var(--bg-tertiary)]">
+                          {section.title && <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-4">{section.title}</h3>}
+                          <div className="space-y-4">
+                            {events.map((event, i) => (
+                              <div key={i} className="flex gap-4">
+                                <div className="flex flex-col items-center">
+                                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: sectionColor }} />
+                                  {i < events.length - 1 && <div className="w-0.5 flex-1 mt-1" style={{ backgroundColor: `${sectionColor}40` }} />}
+                                </div>
+                                <div className="flex-1 pb-4">
+                                  <div className="font-semibold" style={{ color: sectionColor }}>{event.date}</div>
+                                  <div className="font-medium text-[var(--text-primary)]">{event.title}</div>
+                                  {event.description && <div className="text-sm text-[var(--text-secondary)] mt-1">{event.description}</div>}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )
+                    }
+
+                    // Process/Steps Section
+                    if (section.section_type === 'process' && content.steps) {
+                      const steps = content.steps as Array<{ step: number; title: string; description?: string }>
+                      return (
+                        <div key={idx} className="p-6 rounded-xl bg-[var(--bg-tertiary)]">
+                          {section.title && <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-4">{section.title}</h3>}
+                          <div className="space-y-3">
+                            {steps.map((step, i) => (
+                              <div key={i} className="flex gap-4 items-start">
+                                <div
+                                  className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm shrink-0"
+                                  style={{ backgroundColor: sectionColor }}
+                                >
+                                  {step.step}
+                                </div>
+                                <div>
+                                  <div className="font-medium text-[var(--text-primary)]">{step.title}</div>
+                                  {step.description && <div className="text-sm text-[var(--text-secondary)] mt-1">{step.description}</div>}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )
+                    }
+
+                    // Comparison Section
+                    if (section.section_type === 'comparison' && content.left && content.right) {
+                      const left = content.left as { label: string; points: string[] }
+                      const right = content.right as { label: string; points: string[] }
+                      return (
+                        <div key={idx} className="p-6 rounded-xl bg-[var(--bg-tertiary)]">
+                          {section.title && <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-4">{section.title}</h3>}
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="p-4 rounded-lg" style={{ backgroundColor: `${infographicData.color_scheme![0]}15` }}>
+                              <div className="font-semibold mb-3" style={{ color: infographicData.color_scheme![0] }}>{left.label}</div>
+                              <ul className="space-y-2">
+                                {left.points.map((point, i) => (
+                                  <li key={i} className="text-sm text-[var(--text-secondary)] flex items-start gap-2">
+                                    <span style={{ color: infographicData.color_scheme![0] }}>•</span>
+                                    {point}
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                            <div className="p-4 rounded-lg" style={{ backgroundColor: `${infographicData.color_scheme![1]}15` }}>
+                              <div className="font-semibold mb-3" style={{ color: infographicData.color_scheme![1] }}>{right.label}</div>
+                              <ul className="space-y-2">
+                                {right.points.map((point, i) => (
+                                  <li key={i} className="text-sm text-[var(--text-secondary)] flex items-start gap-2">
+                                    <span style={{ color: infographicData.color_scheme![1] }}>•</span>
+                                    {point}
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    }
+
+                    // List Section
+                    if (section.section_type === 'list' && content.items) {
+                      const items = content.items as string[]
+                      return (
+                        <div key={idx} className="p-6 rounded-xl bg-[var(--bg-tertiary)]">
+                          {section.title && <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-4">{section.title}</h3>}
+                          <ul className="space-y-3">
+                            {items.map((item, i) => (
+                              <li key={i} className="flex items-start gap-3">
+                                <div
+                                  className="w-2 h-2 rounded-full mt-2 shrink-0"
+                                  style={{ backgroundColor: sectionColor }}
+                                />
+                                <span className="text-[var(--text-secondary)]">{item}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )
+                    }
+
+                    // Quote Section
+                    if (section.section_type === 'quote') {
+                      const quote = content.quote as string
+                      const author = content.author as string | undefined
+                      return (
+                        <div
+                          key={idx}
+                          className="p-6 rounded-xl"
+                          style={{
+                            backgroundColor: `${sectionColor}10`,
+                            borderLeft: `4px solid ${sectionColor}`
+                          }}
+                        >
+                          {section.title && <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-3">{section.title}</h3>}
+                          <blockquote className="text-lg italic text-[var(--text-primary)]">"{quote}"</blockquote>
+                          {author && <div className="mt-2 text-sm text-[var(--text-secondary)]">— {author}</div>}
+                        </div>
+                      )
+                    }
+
+                    // Default/Header/Footer - simple display
+                    return (
+                      <div key={idx} className="p-6 rounded-xl bg-[var(--bg-tertiary)]">
+                        {section.title && <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-2">{section.title}</h3>}
+                        {typeof content.subtitle === 'string' && <p className="text-[var(--text-secondary)]">{content.subtitle}</p>}
+                        {typeof content.text === 'string' && <p className="text-sm text-[var(--text-tertiary)]">{content.text}</p>}
+                      </div>
+                    )
+                  })}
+
+                  {/* Style suggestion footer */}
+                  <p className="text-xs text-[var(--text-tertiary)] text-center italic pt-4 border-t border-[rgba(255,255,255,0.1)]">
+                    Design suggestion: {infographicData.style_suggestion}
+                  </p>
                 </div>
-
-                {/* Render each section based on type */}
-                {infographicData.sections.map((section, idx) => {
-                  const sectionColor = infographicData.color_scheme[idx % infographicData.color_scheme.length]
-                  const content = section.content as Record<string, unknown>
-
-                  // Stats Section
-                  if (section.section_type === 'stats' && content.items) {
-                    const items = content.items as Array<{ value: string; label: string; icon?: string }>
-                    return (
-                      <div key={idx} className="p-6 rounded-xl bg-[var(--bg-tertiary)]">
-                        {section.title && <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-4">{section.title}</h3>}
-                        <div className="grid grid-cols-3 gap-4">
-                          {items.map((item, i) => (
-                            <div key={i} className="text-center p-4 rounded-lg" style={{ backgroundColor: `${sectionColor}15` }}>
-                              <div className="text-2xl font-bold" style={{ color: sectionColor }}>{item.value}</div>
-                              <div className="text-sm text-[var(--text-secondary)] mt-1">{item.label}</div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )
-                  }
-
-                  // Timeline Section
-                  if (section.section_type === 'timeline' && content.events) {
-                    const events = content.events as Array<{ date: string; title: string; description?: string }>
-                    return (
-                      <div key={idx} className="p-6 rounded-xl bg-[var(--bg-tertiary)]">
-                        {section.title && <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-4">{section.title}</h3>}
-                        <div className="space-y-4">
-                          {events.map((event, i) => (
-                            <div key={i} className="flex gap-4">
-                              <div className="flex flex-col items-center">
-                                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: sectionColor }} />
-                                {i < events.length - 1 && <div className="w-0.5 flex-1 mt-1" style={{ backgroundColor: `${sectionColor}40` }} />}
-                              </div>
-                              <div className="flex-1 pb-4">
-                                <div className="font-semibold" style={{ color: sectionColor }}>{event.date}</div>
-                                <div className="font-medium text-[var(--text-primary)]">{event.title}</div>
-                                {event.description && <div className="text-sm text-[var(--text-secondary)] mt-1">{event.description}</div>}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )
-                  }
-
-                  // Process/Steps Section
-                  if (section.section_type === 'process' && content.steps) {
-                    const steps = content.steps as Array<{ step: number; title: string; description?: string }>
-                    return (
-                      <div key={idx} className="p-6 rounded-xl bg-[var(--bg-tertiary)]">
-                        {section.title && <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-4">{section.title}</h3>}
-                        <div className="space-y-3">
-                          {steps.map((step, i) => (
-                            <div key={i} className="flex gap-4 items-start">
-                              <div
-                                className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm shrink-0"
-                                style={{ backgroundColor: sectionColor }}
-                              >
-                                {step.step}
-                              </div>
-                              <div>
-                                <div className="font-medium text-[var(--text-primary)]">{step.title}</div>
-                                {step.description && <div className="text-sm text-[var(--text-secondary)] mt-1">{step.description}</div>}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )
-                  }
-
-                  // Comparison Section
-                  if (section.section_type === 'comparison' && content.left && content.right) {
-                    const left = content.left as { label: string; points: string[] }
-                    const right = content.right as { label: string; points: string[] }
-                    return (
-                      <div key={idx} className="p-6 rounded-xl bg-[var(--bg-tertiary)]">
-                        {section.title && <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-4">{section.title}</h3>}
-                        <div className="grid grid-cols-2 gap-4">
-                          <div className="p-4 rounded-lg" style={{ backgroundColor: `${infographicData.color_scheme[0]}15` }}>
-                            <div className="font-semibold mb-3" style={{ color: infographicData.color_scheme[0] }}>{left.label}</div>
-                            <ul className="space-y-2">
-                              {left.points.map((point, i) => (
-                                <li key={i} className="text-sm text-[var(--text-secondary)] flex items-start gap-2">
-                                  <span style={{ color: infographicData.color_scheme[0] }}>•</span>
-                                  {point}
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                          <div className="p-4 rounded-lg" style={{ backgroundColor: `${infographicData.color_scheme[1]}15` }}>
-                            <div className="font-semibold mb-3" style={{ color: infographicData.color_scheme[1] }}>{right.label}</div>
-                            <ul className="space-y-2">
-                              {right.points.map((point, i) => (
-                                <li key={i} className="text-sm text-[var(--text-secondary)] flex items-start gap-2">
-                                  <span style={{ color: infographicData.color_scheme[1] }}>•</span>
-                                  {point}
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        </div>
-                      </div>
-                    )
-                  }
-
-                  // List Section
-                  if (section.section_type === 'list' && content.items) {
-                    const items = content.items as string[]
-                    return (
-                      <div key={idx} className="p-6 rounded-xl bg-[var(--bg-tertiary)]">
-                        {section.title && <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-4">{section.title}</h3>}
-                        <ul className="space-y-3">
-                          {items.map((item, i) => (
-                            <li key={i} className="flex items-start gap-3">
-                              <div
-                                className="w-2 h-2 rounded-full mt-2 shrink-0"
-                                style={{ backgroundColor: sectionColor }}
-                              />
-                              <span className="text-[var(--text-secondary)]">{item}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )
-                  }
-
-                  // Quote Section
-                  if (section.section_type === 'quote') {
-                    const quote = content.quote as string
-                    const author = content.author as string | undefined
-                    return (
-                      <div
-                        key={idx}
-                        className="p-6 rounded-xl"
-                        style={{
-                          backgroundColor: `${sectionColor}10`,
-                          borderLeft: `4px solid ${sectionColor}`
-                        }}
-                      >
-                        {section.title && <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-3">{section.title}</h3>}
-                        <blockquote className="text-lg italic text-[var(--text-primary)]">"{quote}"</blockquote>
-                        {author && <div className="mt-2 text-sm text-[var(--text-secondary)]">— {author}</div>}
-                      </div>
-                    )
-                  }
-
-                  // Default/Header/Footer - simple display
-                  return (
-                    <div key={idx} className="p-6 rounded-xl bg-[var(--bg-tertiary)]">
-                      {section.title && <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-2">{section.title}</h3>}
-                      {typeof content.subtitle === 'string' && <p className="text-[var(--text-secondary)]">{content.subtitle}</p>}
-                      {typeof content.text === 'string' && <p className="text-sm text-[var(--text-tertiary)]">{content.text}</p>}
-                    </div>
-                  )
-                })}
-
-                {/* Style suggestion footer */}
-                <p className="text-xs text-[var(--text-tertiary)] text-center italic pt-4 border-t border-[rgba(255,255,255,0.1)]">
-                  Design suggestion: {infographicData.style_suggestion}
-                </p>
-              </div>
+              ) : (
+                <div className="text-center py-12 text-[var(--text-tertiary)]">
+                  <ImageIcon className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>No infographic data available</p>
+                </div>
+              )
             )}
           </div>
           </div>
