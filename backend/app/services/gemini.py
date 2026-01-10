@@ -1,16 +1,26 @@
 import google.generativeai as genai
-from google import genai as genai_new
-from google.genai import types as genai_types
 from typing import Optional, List, Dict, Any
 import wave
 import io
 from app.config import get_settings
 
+# Try to import new SDK for TTS, fallback gracefully
+try:
+    from google import genai as genai_new
+    from google.genai import types as genai_types
+    NEW_SDK_AVAILABLE = True
+except ImportError:
+    NEW_SDK_AVAILABLE = False
+    genai_new = None
+    genai_types = None
+
 settings = get_settings()
 genai.configure(api_key=settings.google_api_key)
 
-# Initialize new genai client for TTS
-genai_client = genai_new.Client(api_key=settings.google_api_key)
+# Initialize new genai client for TTS (if available)
+genai_client = None
+if NEW_SDK_AVAILABLE:
+    genai_client = genai_new.Client(api_key=settings.google_api_key)
 
 
 # Model pricing (per 1M tokens)
@@ -285,6 +295,9 @@ Make it natural, engaging, and educational."""
         format_type: str = "deep_dive",
     ) -> Dict[str, Any]:
         """Generate TTS audio from script using Gemini 2.5 Flash TTS."""
+        if not NEW_SDK_AVAILABLE or not genai_client:
+            raise Exception("TTS not available: google-genai SDK not installed")
+
         # Parse script to extract speakers
         speakers = self._extract_speakers(script, format_type)
 

@@ -59,7 +59,7 @@ function CodeBlock({ code, language = "bash" }: { code: string; language?: strin
 function Endpoint({ method, path, description, requestBody, responseExample, notes }: EndpointProps) {
   const [expanded, setExpanded] = useState(false);
 
-  const baseUrl = "http://localhost:8000";
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || "https://notebooklm-api.vercel.app";
   const fullPath = `${baseUrl}${path}`;
 
   let curlCommand = `curl -X ${method} "${fullPath}" \\
@@ -196,7 +196,7 @@ export default function ApiDocsPage() {
 
             <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4 mb-6">
               <h4 className="text-sm font-medium text-zinc-300 mb-3">Example Request</h4>
-              <CodeBlock code={`curl -X GET "http://localhost:8000/api/v1/notebooks" \\
+              <CodeBlock code={`curl -X GET "https://notebooklm-api.vercel.app/api/v1/notebooks" \\
   -H "X-API-Key: nb_live_your_api_key_here"`} />
             </div>
 
@@ -319,7 +319,7 @@ export default function ApiDocsPage() {
               description="Upload a file (PDF, DOCX, TXT)"
               notes="Use multipart/form-data with a 'file' field"
               requestBody={`# Use multipart form data:
-# curl -X POST "http://localhost:8000/api/v1/notebooks/{notebook_id}/sources" \\
+# curl -X POST "https://notebooklm-api.vercel.app/api/v1/notebooks/{notebook_id}/sources" \\
 #   -H "X-API-Key: YOUR_API_KEY" \\
 #   -F "file=@/path/to/document.pdf"`}
             />

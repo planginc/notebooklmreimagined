@@ -31,7 +31,18 @@ import {
   ArrowLeft,
   RefreshCw,
   BookOpen,
+  Link2,
+  Code,
+  MessageSquare,
+  FileText,
+  Mic,
+  Video,
+  Brain,
+  GraduationCap,
+  ExternalLink,
 } from 'lucide-react'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import Link from 'next/link'
 import { toast } from 'sonner'
 
 const API_KEY_SCOPES = [
@@ -47,6 +58,25 @@ const API_KEY_SCOPES = [
   { value: 'notes', label: 'Notes', description: 'Manage notes' },
 ]
 
+interface Notebook {
+  id: string
+  name: string
+  emoji: string | null
+}
+
+type OperationType = 'list_notebooks' | 'chat' | 'sources' | 'audio' | 'video' | 'research' | 'study' | 'global_chat'
+
+const operations: { value: OperationType; label: string; icon: React.ReactNode; method: string; needsNotebook: boolean; path: string; body?: object }[] = [
+  { value: 'list_notebooks', label: 'List Notebooks', icon: <BookOpen className="h-4 w-4" />, method: 'GET', needsNotebook: false, path: '/api/v1/notebooks' },
+  { value: 'chat', label: 'Chat with Notebook', icon: <MessageSquare className="h-4 w-4" />, method: 'POST', needsNotebook: true, path: '/api/v1/notebooks/{id}/chat', body: { message: "What are the key insights from this content?" } },
+  { value: 'sources', label: 'List Sources', icon: <FileText className="h-4 w-4" />, method: 'GET', needsNotebook: true, path: '/api/v1/notebooks/{id}/sources' },
+  { value: 'audio', label: 'Generate Audio', icon: <Mic className="h-4 w-4" />, method: 'POST', needsNotebook: true, path: '/api/v1/notebooks/{id}/audio', body: { format: "deep_dive" } },
+  { value: 'video', label: 'Generate Video', icon: <Video className="h-4 w-4" />, method: 'POST', needsNotebook: true, path: '/api/v1/notebooks/{id}/video', body: { style: "explainer" } },
+  { value: 'research', label: 'Deep Research', icon: <Brain className="h-4 w-4" />, method: 'POST', needsNotebook: true, path: '/api/v1/notebooks/{id}/research', body: { query: "Latest developments in this topic", mode: "deep" } },
+  { value: 'study', label: 'Generate Flashcards', icon: <GraduationCap className="h-4 w-4" />, method: 'POST', needsNotebook: true, path: '/api/v1/notebooks/{id}/flashcards', body: { count: 10 } },
+  { value: 'global_chat', label: 'Global Chat (All Notebooks)', icon: <MessageSquare className="h-4 w-4" />, method: 'POST', needsNotebook: false, path: '/api/v1/chat/global', body: { message: "Search across all my knowledge" } },
+]
+
 export default function SettingsPage() {
   const [apiKeys, setApiKeys] = useState<ApiKey[]>([])
   const [loading, setLoading] = useState(true)
@@ -54,6 +84,7 @@ export default function SettingsPage() {
   const [newKeyDialogOpen, setNewKeyDialogOpen] = useState(false)
   const [newKeySecret, setNewKeySecret] = useState('')
   const [copied, setCopied] = useState(false)
+  const [copiedField, setCopiedField] = useState<string | null>(null)
   const [creating, setCreating] = useState(false)
 
   // Create form state
@@ -63,11 +94,19 @@ export default function SettingsPage() {
   const [newKeyRpm, setNewKeyRpm] = useState(60)
   const [newKeyRpd, setNewKeyRpd] = useState(10000)
 
+  // API Request Builder state
+  const [notebooks, setNotebooks] = useState<Notebook[]>([])
+  const [selectedNotebook, setSelectedNotebook] = useState<string>('')
+  const [selectedOperation, setSelectedOperation] = useState<OperationType>('chat')
+  const [loadingNotebooks, setLoadingNotebooks] = useState(false)
+
   const router = useRouter()
   const supabase = createClient()
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://notebooklm-api.vercel.app'
 
   useEffect(() => {
     checkAuthAndLoadKeys()
+    loadNotebooks()
   }, [])
 
   async function checkAuthAndLoadKeys() {
@@ -163,6 +202,91 @@ export default function SettingsPage() {
     setTimeout(() => setCopied(false), 2000)
   }
 
+  function copyToClipboardField(text: string, field: string) {
+    navigator.clipboard.writeText(text)
+    setCopiedField(field)
+    setTimeout(() => setCopiedField(null), 2000)
+  }
+
+  async function loadNotebooks() {
+    setLoadingNotebooks(true)
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) return
+
+      const response = await fetch(`${apiUrl}/api/v1/notebooks`, {
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        const notebookList = data.data || []
+        setNotebooks(notebookList)
+        if (notebookList.length > 0 && !selectedNotebook) {
+          setSelectedNotebook(notebookList[0].id)
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load notebooks:', error)
+    } finally {
+      setLoadingNotebooks(false)
+    }
+  }
+
+  // API Request Builder computations
+  const currentOp = operations.find(op => op.value === selectedOperation) || operations[0]
+  const selectedNotebookData = notebooks.find(n => n.id === selectedNotebook)
+  const actualPath = currentOp.needsNotebook && selectedNotebook
+    ? currentOp.path.replace('{id}', selectedNotebook)
+    : currentOp.path
+  const fullUrl = `${apiUrl}${actualPath}`
+  const activeKey = apiKeys.find(k => k.is_active)
+  const apiKeyDisplay = activeKey ? `${activeKey.key_prefix}...` : 'No API key created'
+
+  // Generate cURL command
+  let curlExample = `curl -X ${currentOp.method} "${fullUrl}" \\
+  -H "X-API-Key: YOUR_API_KEY"`
+  if (currentOp.body) {
+    curlExample += ` \\
+  -H "Content-Type: application/json" \\
+  -d '${JSON.stringify(currentOp.body)}'`
+  }
+
+  // Generate n8n config
+  const n8nConfigObj: Record<string, unknown> = {
+    method: currentOp.method,
+    url: fullUrl,
+    headers: { "X-API-Key": "YOUR_API_KEY" }
+  }
+  if (currentOp.body) {
+    n8nConfigObj.body = currentOp.body
+  }
+  const n8nConfig = JSON.stringify(n8nConfigObj, null, 2)
+
+  // Generate Make config
+  let makeConfig = `URL: ${fullUrl}
+Method: ${currentOp.method}
+Headers:
+  X-API-Key: YOUR_API_KEY`
+  if (currentOp.body) {
+    makeConfig += `
+Body (JSON):
+  ${JSON.stringify(currentOp.body, null, 2).split('\n').join('\n  ')}`
+  }
+
+  // Generate Zapier config
+  let zapierConfig = `Webhook URL: ${fullUrl}
+Method: ${currentOp.method}
+Headers:
+  X-API-Key: YOUR_API_KEY`
+  if (currentOp.body) {
+    zapierConfig += `
+Data:
+  ${JSON.stringify(currentOp.body, null, 2).split('\n').join('\n  ')}`
+  }
+
   function formatDate(dateStr: string | null) {
     if (!dateStr) return 'Never'
     return new Date(dateStr).toLocaleDateString('en-US', {
@@ -215,6 +339,10 @@ export default function SettingsPage() {
               <Key className="h-4 w-4" />
               API Keys
             </TabsTrigger>
+            <TabsTrigger value="request-builder" className="gap-2 data-[state=active]:bg-[#7c3aed] data-[state=active]:text-white">
+              <Link2 className="h-4 w-4" />
+              API Request Builder
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="api-keys" className="space-y-6">
@@ -252,7 +380,7 @@ export default function SettingsPage() {
                 Use your API key with the <code className="bg-[rgba(255,255,255,0.1)] px-1.5 py-0.5 rounded text-[#7c3aed]">X-API-Key</code> header:
               </p>
               <pre className="bg-[rgba(0,0,0,0.3)] p-3 rounded text-sm text-gray-300 overflow-x-auto">
-{`curl -X POST http://localhost:8000/api/v1/notebooks/{id}/chat \\
+{`curl -X POST https://notebooklm-api.vercel.app/api/v1/notebooks/{id}/chat \\
   -H "X-API-Key: nb_live_your_key_here" \\
   -H "Content-Type: application/json" \\
   -d '{"message": "What are the key findings?"}'`}
@@ -360,6 +488,265 @@ export default function SettingsPage() {
                   </div>
                 ))
               )}
+            </div>
+          </TabsContent>
+
+          {/* API Request Builder Tab */}
+          <TabsContent value="request-builder" className="space-y-6">
+            <div className="bg-[#0f0f1a] border border-[rgba(255,255,255,0.1)] rounded-lg p-6">
+              <div className="flex items-center gap-3 mb-2">
+                <Link2 className="h-5 w-5 text-[#7c3aed]" />
+                <h2 className="text-lg font-medium text-white">API Request Builder</h2>
+              </div>
+              <p className="text-gray-400 text-sm mb-6">
+                Select an operation and notebook to generate ready-to-use API requests for n8n, Zapier, Make, or cURL.
+              </p>
+
+              <div className="space-y-6">
+                {/* Operation & Notebook Selector */}
+                <div className="bg-[rgba(124,58,237,0.1)] border border-[#7c3aed]/30 rounded-lg p-4 space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Operation Selector */}
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-gray-300">Operation</label>
+                      <Select value={selectedOperation} onValueChange={(v) => setSelectedOperation(v as OperationType)}>
+                        <SelectTrigger className="bg-[rgba(0,0,0,0.3)] border-[rgba(255,255,255,0.1)] text-white">
+                          <SelectValue placeholder="Select operation" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-[#1a1a2e] border-[rgba(255,255,255,0.1)]">
+                          {operations.map((op) => (
+                            <SelectItem key={op.value} value={op.value} className="text-white hover:bg-[rgba(255,255,255,0.1)]">
+                              <div className="flex items-center gap-2">
+                                {op.icon}
+                                <span>{op.label}</span>
+                                <span className={`ml-2 text-xs px-1.5 py-0.5 rounded ${
+                                  op.method === 'GET' ? 'bg-green-500/20 text-green-400' : 'bg-blue-500/20 text-blue-400'
+                                }`}>
+                                  {op.method}
+                                </span>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Notebook Selector */}
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-gray-300 flex items-center gap-2">
+                        Notebook
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={loadNotebooks}
+                          disabled={loadingNotebooks}
+                          className="h-6 w-6 p-0 text-gray-400 hover:text-white"
+                        >
+                          <RefreshCw className={`h-3 w-3 ${loadingNotebooks ? 'animate-spin' : ''}`} />
+                        </Button>
+                      </label>
+                      <Select
+                        value={selectedNotebook}
+                        onValueChange={setSelectedNotebook}
+                        disabled={!currentOp.needsNotebook}
+                      >
+                        <SelectTrigger className={`bg-[rgba(0,0,0,0.3)] border-[rgba(255,255,255,0.1)] text-white ${!currentOp.needsNotebook ? 'opacity-50' : ''}`}>
+                          <SelectValue placeholder={currentOp.needsNotebook ? "Select notebook" : "Not required"} />
+                        </SelectTrigger>
+                        <SelectContent className="bg-[#1a1a2e] border-[rgba(255,255,255,0.1)]">
+                          {notebooks.length === 0 ? (
+                            <div className="px-3 py-2 text-sm text-gray-400">No notebooks found</div>
+                          ) : (
+                            notebooks.map((nb) => (
+                              <SelectItem key={nb.id} value={nb.id} className="text-white hover:bg-[rgba(255,255,255,0.1)]">
+                                <div className="flex items-center gap-2">
+                                  <span>{nb.emoji || '📓'}</span>
+                                  <span>{nb.name}</span>
+                                </div>
+                              </SelectItem>
+                            ))
+                          )}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  {/* Selected info */}
+                  {currentOp.needsNotebook && selectedNotebookData && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <span className="text-gray-400">Target:</span>
+                      <span className="text-white font-medium">{selectedNotebookData.emoji || '📓'} {selectedNotebookData.name}</span>
+                      <code className="text-xs text-gray-500 bg-[rgba(0,0,0,0.3)] px-2 py-0.5 rounded">{selectedNotebook.slice(0, 8)}...</code>
+                    </div>
+                  )}
+                </div>
+
+                {/* Server URL */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-300">Server URL</label>
+                  <div className="relative">
+                    <pre className="bg-[rgba(0,0,0,0.3)] p-4 pr-16 rounded-lg text-sm font-mono text-white overflow-x-auto">
+                      {apiUrl}
+                    </pre>
+                    <Button
+                      size="sm"
+                      className="absolute top-2 right-2 bg-[#7c3aed] hover:bg-[#6d28d9]"
+                      onClick={() => copyToClipboardField(apiUrl, 'url')}
+                    >
+                      {copiedField === 'url' ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                </div>
+
+                {/* API Key */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-300 flex items-center gap-2">
+                    <Key className="h-4 w-4" />
+                    API Key
+                  </label>
+                  {activeKey ? (
+                    <div className="relative">
+                      <pre className="bg-[rgba(0,0,0,0.3)] p-4 pr-16 rounded-lg text-sm font-mono text-white overflow-x-auto">
+                        {apiKeyDisplay}
+                      </pre>
+                      <p className="text-xs text-gray-500 mt-2">
+                        Full key shown only once when created. Go to the{' '}
+                        <button onClick={() => {}} className="text-[#7c3aed] hover:underline">
+                          API Keys tab
+                        </button>{' '}
+                        to manage keys.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="bg-[rgba(255,200,0,0.1)] border border-yellow-600/30 rounded-lg p-4">
+                      <p className="text-yellow-200 text-sm">
+                        No API key found.{' '}
+                        <button onClick={() => setCreateDialogOpen(true)} className="text-[#7c3aed] hover:underline font-medium">
+                          Create one now
+                        </button>
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {/* cURL Example */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-300 flex items-center gap-2">
+                    <Code className="h-4 w-4" />
+                    cURL: {currentOp.label}
+                    <span className={`text-xs px-1.5 py-0.5 rounded ${
+                      currentOp.method === 'GET' ? 'bg-green-500/20 text-green-400' : 'bg-blue-500/20 text-blue-400'
+                    }`}>
+                      {currentOp.method}
+                    </span>
+                  </label>
+                  <div className="relative">
+                    <pre className="bg-[rgba(0,0,0,0.3)] p-4 pr-16 rounded-lg text-sm font-mono text-green-400 overflow-x-auto whitespace-pre-wrap">
+                      {curlExample}
+                    </pre>
+                    <Button
+                      size="sm"
+                      className="absolute top-2 right-2 bg-[#7c3aed] hover:bg-[#6d28d9]"
+                      onClick={() => copyToClipboardField(curlExample, 'curl')}
+                    >
+                      {copiedField === 'curl' ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                </div>
+
+                {/* n8n Config */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-300 flex items-center gap-2">
+                    <img src="https://n8n.io/favicon.ico" alt="n8n" className="h-4 w-4" />
+                    n8n HTTP Request Node
+                  </label>
+                  <div className="relative">
+                    <pre className="bg-[rgba(0,0,0,0.3)] p-4 pr-16 rounded-lg text-sm font-mono text-blue-400 overflow-x-auto whitespace-pre-wrap">
+                      {n8nConfig}
+                    </pre>
+                    <Button
+                      size="sm"
+                      className="absolute top-2 right-2 bg-[#7c3aed] hover:bg-[#6d28d9]"
+                      onClick={() => copyToClipboardField(n8nConfig, 'n8n')}
+                    >
+                      {copiedField === 'n8n' ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Make Config */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-300 flex items-center gap-2">
+                    <ExternalLink className="h-4 w-4" />
+                    Make (Integromat) HTTP Module
+                  </label>
+                  <div className="relative">
+                    <pre className="bg-[rgba(0,0,0,0.3)] p-4 pr-16 rounded-lg text-sm font-mono text-purple-400 overflow-x-auto whitespace-pre-wrap">
+                      {makeConfig}
+                    </pre>
+                    <Button
+                      size="sm"
+                      className="absolute top-2 right-2 bg-[#7c3aed] hover:bg-[#6d28d9]"
+                      onClick={() => copyToClipboardField(makeConfig, 'make')}
+                    >
+                      {copiedField === 'make' ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Zapier Config */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-300 flex items-center gap-2">
+                    <ExternalLink className="h-4 w-4" />
+                    Zapier Webhooks
+                  </label>
+                  <div className="relative">
+                    <pre className="bg-[rgba(0,0,0,0.3)] p-4 pr-16 rounded-lg text-sm font-mono text-orange-400 overflow-x-auto whitespace-pre-wrap">
+                      {zapierConfig}
+                    </pre>
+                    <Button
+                      size="sm"
+                      className="absolute top-2 right-2 bg-[#7c3aed] hover:bg-[#6d28d9]"
+                      onClick={() => copyToClipboardField(zapierConfig, 'zapier')}
+                    >
+                      {copiedField === 'zapier' ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Available Endpoints */}
+                <div className="space-y-2 pt-4 border-t border-[rgba(255,255,255,0.1)]">
+                  <label className="text-sm font-medium text-gray-300">Popular Endpoints</label>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {[
+                      { method: 'GET', path: '/api/v1/notebooks', desc: 'List all notebooks' },
+                      { method: 'POST', path: '/api/v1/notebooks/{id}/chat', desc: 'Chat with notebook' },
+                      { method: 'GET', path: '/api/v1/notebooks/{id}/sources', desc: 'List sources' },
+                      { method: 'POST', path: '/api/v1/chat/global', desc: 'Global search' },
+                    ].map((endpoint) => (
+                      <div
+                        key={endpoint.path}
+                        className="bg-[rgba(0,0,0,0.2)] rounded-lg p-3 flex items-start gap-2"
+                      >
+                        <span className={`text-xs font-mono px-1.5 py-0.5 rounded ${
+                          endpoint.method === 'GET' ? 'bg-green-500/20 text-green-400' : 'bg-blue-500/20 text-blue-400'
+                        }`}>
+                          {endpoint.method}
+                        </span>
+                        <div>
+                          <code className="text-xs text-gray-300">{endpoint.path}</code>
+                          <p className="text-xs text-gray-500 mt-0.5">{endpoint.desc}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-xs text-gray-500 mt-2">
+                    <Link href="/docs" className="text-[#7c3aed] hover:underline">
+                      View full API documentation →
+                    </Link>
+                  </p>
+                </div>
+              </div>
             </div>
           </TabsContent>
         </Tabs>

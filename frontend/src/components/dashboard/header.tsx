@@ -1,5 +1,6 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Search, Settings, Bell, User, LogOut, Key } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -14,6 +15,14 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { User as SupabaseUser } from '@supabase/supabase-js'
 import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase'
+
+interface Profile {
+  id: string
+  display_name: string | null
+  avatar_url: string | null
+  email: string
+}
 
 interface DashboardHeaderProps {
   user: SupabaseUser | null
@@ -29,7 +38,46 @@ export function DashboardHeader({
   onLogout,
 }: DashboardHeaderProps) {
   const router = useRouter()
-  const initials = user?.email?.slice(0, 2).toUpperCase() || 'U'
+  const [profile, setProfile] = useState<Profile | null>(null)
+
+  useEffect(() => {
+    async function loadProfile() {
+      if (!user) return
+
+      try {
+        const supabase = createClient()
+        const { data: { session } } = await supabase.auth.getSession()
+        if (!session) return
+
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://notebooklm-api.vercel.app'
+        const response = await fetch(`${apiUrl}/api/v1/profile`, {
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+          },
+        })
+
+        if (response.ok) {
+          const data = await response.json()
+          setProfile(data)
+        }
+      } catch (error) {
+        console.error('Failed to load profile:', error)
+      }
+    }
+
+    loadProfile()
+  }, [user])
+
+  // Use profile display_name if available, otherwise fall back to email
+  const displayName = profile?.display_name || user?.email || 'User'
+
+  // Generate initials from display name (supports first+last name)
+  const initials = displayName
+    .split(' ')
+    .map(n => n[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase() || 'U'
 
   return (
     <motion.header
@@ -88,13 +136,13 @@ export function DashboardHeader({
               className="h-10 gap-2 px-2 rounded-xl hover:bg-[var(--bg-tertiary)]"
             >
               <Avatar className="h-8 w-8">
-                <AvatarImage src="" alt={user?.email || 'User'} />
+                <AvatarImage src={profile?.avatar_url || ''} alt={displayName} />
                 <AvatarFallback className="bg-[var(--accent-primary)] text-white text-sm">
                   {initials}
                 </AvatarFallback>
               </Avatar>
               <span className="text-sm text-[var(--text-secondary)] hidden lg:inline max-w-[120px] truncate">
-                {user?.email}
+                {displayName}
               </span>
             </Button>
           </DropdownMenuTrigger>
@@ -103,11 +151,14 @@ export function DashboardHeader({
             className="w-56 bg-[var(--bg-secondary)] border-[rgba(255,255,255,0.1)]"
           >
             <div className="px-2 py-2">
-              <p className="text-sm font-medium text-[var(--text-primary)]">{user?.email}</p>
+              <p className="text-sm font-medium text-[var(--text-primary)]">{displayName}</p>
               <p className="text-xs text-[var(--text-tertiary)]">Free Plan</p>
             </div>
             <DropdownMenuSeparator className="bg-[rgba(255,255,255,0.1)]" />
-            <DropdownMenuItem className="cursor-pointer">
+            <DropdownMenuItem
+              className="cursor-pointer"
+              onClick={() => router.push('/profile')}
+            >
               <User className="h-4 w-4 mr-2" />
               Profile
             </DropdownMenuItem>
