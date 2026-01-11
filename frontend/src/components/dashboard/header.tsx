@@ -85,12 +85,33 @@ export function DashboardHeader({
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
-      className="h-16 bg-[var(--bg-secondary)] border-b border-[rgba(255,255,255,0.1)] px-6 flex items-center justify-between sticky top-0 z-50"
+      className="h-16 bg-[var(--bg-secondary)] border-b border-[var(--border)] px-6 flex items-center justify-between sticky top-0 z-50"
     >
       {/* Logo */}
       <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center">
-          <span className="text-lg font-bold text-white">N</span>
+        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[var(--accent-primary)] via-[var(--accent-secondary)] to-[var(--accent-tertiary)] p-0.5 shadow-lg shadow-[var(--accent-primary)]/20">
+          <div className="w-full h-full rounded-[10px] bg-[var(--bg-primary)] flex items-center justify-center relative overflow-hidden">
+            {/* Neural network lines */}
+            <svg className="absolute inset-0 w-full h-full opacity-30" viewBox="0 0 40 40">
+              <circle cx="12" cy="12" r="2" fill="currentColor" className="text-[var(--accent-primary)]" />
+              <circle cx="28" cy="12" r="2" fill="currentColor" className="text-[var(--accent-secondary)]" />
+              <circle cx="20" cy="28" r="2" fill="currentColor" className="text-[var(--accent-tertiary)]" />
+              <line x1="12" y1="12" x2="28" y2="12" stroke="currentColor" strokeWidth="1" className="text-[var(--accent-primary)]" />
+              <line x1="12" y1="12" x2="20" y2="28" stroke="currentColor" strokeWidth="1" className="text-[var(--accent-secondary)]" />
+              <line x1="28" y1="12" x2="20" y2="28" stroke="currentColor" strokeWidth="1" className="text-[var(--accent-tertiary)]" />
+            </svg>
+            {/* Main icon - stylized notebook with sparkle */}
+            <svg className="w-6 h-6 relative z-10" viewBox="0 0 24 24" fill="none">
+              {/* Notebook body */}
+              <rect x="5" y="3" width="14" height="18" rx="2" className="stroke-[var(--accent-primary)]" strokeWidth="1.5" fill="none" />
+              {/* Notebook lines */}
+              <line x1="8" y1="8" x2="16" y2="8" className="stroke-[var(--accent-secondary)]" strokeWidth="1.5" strokeLinecap="round" />
+              <line x1="8" y1="12" x2="14" y2="12" className="stroke-[var(--accent-secondary)]" strokeWidth="1.5" strokeLinecap="round" />
+              {/* AI sparkle */}
+              <path d="M18 2l.5 1.5L20 4l-1.5.5L18 6l-.5-1.5L16 4l1.5-.5L18 2z" className="fill-[var(--accent-tertiary)]" />
+              <path d="M20 15l.35 1L21.5 16.35l-1.15.35L20 17.85l-.35-1.15L18.5 16.35l1.15-.35L20 15z" className="fill-[var(--accent-primary)]" />
+            </svg>
+          </div>
         </div>
         <span className="text-lg font-semibold text-[var(--text-primary)] hidden sm:inline">
           NotebookLM Reimagined
@@ -105,7 +126,7 @@ export function DashboardHeader({
             placeholder="Search notebooks..."
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="pl-10 h-10 bg-[var(--bg-tertiary)] border-[rgba(255,255,255,0.1)] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:border-[var(--accent-primary)] rounded-xl"
+            className="pl-10 h-10 bg-[var(--bg-tertiary)] border-[var(--border)] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:border-[var(--accent-primary)] rounded-xl"
           />
         </div>
       </div>
@@ -152,13 +173,13 @@ export function DashboardHeader({
           </DropdownMenuTrigger>
           <DropdownMenuContent
             align="end"
-            className="w-56 bg-[var(--bg-secondary)] border-[rgba(255,255,255,0.1)]"
+            className="w-56 bg-[var(--bg-secondary)] border-[var(--border)]"
           >
             <div className="px-2 py-2">
               <p className="text-sm font-medium text-[var(--text-primary)]">{displayName}</p>
               <p className="text-xs text-[var(--text-tertiary)]">Free Plan</p>
             </div>
-            <DropdownMenuSeparator className="bg-[rgba(255,255,255,0.1)]" />
+            <DropdownMenuSeparator className="bg-[var(--border)]" />
             <DropdownMenuItem
               className="cursor-pointer"
               onClick={() => router.push('/profile')}
@@ -180,7 +201,7 @@ export function DashboardHeader({
               <Settings className="h-4 w-4 mr-2" />
               Settings
             </DropdownMenuItem>
-            <DropdownMenuSeparator className="bg-[rgba(255,255,255,0.1)]" />
+            <DropdownMenuSeparator className="bg-[var(--border)]" />
             <DropdownMenuItem
               onClick={onLogout}
               className="cursor-pointer text-[var(--error)] focus:text-[var(--error)]"

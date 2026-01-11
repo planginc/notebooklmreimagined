@@ -125,68 +125,68 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#1a1a2e] flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-[#7c3aed]" />
+      <div className="min-h-screen bg-[var(--bg-primary)] flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-[var(--accent-primary)]" />
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-[#1a1a2e]">
+    <div className="min-h-screen bg-[var(--bg-primary)]">
       {/* Header */}
-      <header className="border-b border-[rgba(255,255,255,0.1)] bg-[#0f0f1a]">
+      <header className="border-b border-[var(--border)] bg-[var(--bg-secondary)]">
         <div className="max-w-5xl mx-auto px-6 py-4 flex items-center gap-4">
           <Button
             variant="ghost"
             size="icon"
             onClick={() => router.back()}
-            className="text-gray-400 hover:text-white hover:bg-[rgba(255,255,255,0.1)]"
+            className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)]"
           >
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-[#7c3aed]/20">
-              <User className="h-5 w-5 text-[#7c3aed]" />
+            <div className="p-2 rounded-lg bg-[var(--accent-primary)]/20">
+              <User className="h-5 w-5 text-[var(--accent-primary)]" />
             </div>
-            <h1 className="text-xl font-semibold text-white">Profile</h1>
+            <h1 className="text-xl font-semibold text-[var(--text-primary)]">Profile</h1>
           </div>
         </div>
       </header>
 
       {/* Main Content */}
       <main className="max-w-5xl mx-auto px-6 py-8">
-        <div className="bg-[#0f0f1a] border border-[rgba(255,255,255,0.1)] rounded-lg p-6">
-          <h2 className="text-lg font-medium text-white mb-6">Profile Settings</h2>
+        <div className="bg-[var(--bg-secondary)] border border-[var(--border)] rounded-lg p-6">
+          <h2 className="text-lg font-medium text-[var(--text-primary)] mb-6">Profile Settings</h2>
 
           <div className="space-y-6">
             {/* Avatar */}
             <div className="flex items-center gap-4">
               <Avatar className="h-20 w-20">
                 <AvatarImage src={profile?.avatar_url || ''} />
-                <AvatarFallback className="bg-[#7c3aed] text-white text-2xl">
+                <AvatarFallback className="bg-[var(--accent-primary)] text-white text-2xl">
                   {initials}
                 </AvatarFallback>
               </Avatar>
               <div>
-                <p className="text-sm text-gray-400">Avatar</p>
-                <p className="text-xs text-gray-500 mt-1">Avatar is generated from your display name initials</p>
+                <p className="text-sm text-[var(--text-secondary)]">Avatar</p>
+                <p className="text-xs text-[var(--text-tertiary)] mt-1">Avatar is generated from your display name initials</p>
               </div>
             </div>
 
             {/* Display Name */}
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-300">Display Name</label>
+              <label className="text-sm font-medium text-[var(--text-secondary)]">Display Name</label>
               <div className="flex gap-3">
                 <Input
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
                   placeholder="Enter your display name"
-                  className="max-w-md bg-[rgba(0,0,0,0.3)] border-[rgba(255,255,255,0.1)] text-white"
+                  className="max-w-md bg-[var(--bg-tertiary)] border-[var(--border)] text-[var(--text-primary)]"
                 />
                 <Button
                   onClick={saveProfile}
                   disabled={saving || displayName === profile?.display_name}
-                  className="bg-[#7c3aed] hover:bg-[#6d28d9]"
+                  className="bg-[var(--accent-primary)] hover:bg-[var(--accent-primary)]/80"
                 >
                   {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save'}
                 </Button>
@@ -195,14 +195,14 @@ export default function ProfilePage() {
 
             {/* Email (read-only) */}
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-300">Email</label>
-              <p className="text-white">{profile?.email}</p>
+              <label className="text-sm font-medium text-[var(--text-secondary)]">Email</label>
+              <p className="text-[var(--text-primary)]">{profile?.email}</p>
             </div>
 
             {/* Member since */}
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-300">Member since</label>
-              <p className="text-white">
+              <label className="text-sm font-medium text-[var(--text-secondary)]">Member since</label>
+              <p className="text-[var(--text-primary)]">
                 {profile?.created_at
                   ? new Date(profile.created_at).toLocaleDateString('en-US', {
                       year: 'numeric',

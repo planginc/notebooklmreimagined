@@ -299,9 +299,9 @@ Data:
   }
 
   return (
-    <div className="min-h-screen bg-[#1a1a2e]">
+    <div className="min-h-screen bg-[var(--bg-primary)]">
       {/* Header */}
-      <header className="border-b border-[rgba(255,255,255,0.1)] bg-[#0f0f1a]">
+      <header className="border-b border-[var(--border)] bg-[var(--bg-secondary)]">
         <div className="max-w-5xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -309,21 +309,21 @@ Data:
                 variant="ghost"
                 size="sm"
                 onClick={() => router.push('/')}
-                className="text-gray-400 hover:text-white"
+                className="text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
               >
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Back
               </Button>
               <div className="flex items-center gap-3">
-                <Settings className="h-6 w-6 text-[#7c3aed]" />
-                <h1 className="text-2xl font-bold text-white">Settings</h1>
+                <Settings className="h-6 w-6 text-[var(--accent-primary)]" />
+                <h1 className="text-2xl font-bold text-[var(--text-primary)]">Settings</h1>
               </div>
             </div>
             <Button
               variant="outline"
               size="sm"
               onClick={() => router.push('/docs')}
-              className="border-[rgba(255,255,255,0.1)] text-gray-400 hover:text-white hover:bg-[rgba(255,255,255,0.05)]"
+              className="border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)]"
             >
               <BookOpen className="h-4 w-4 mr-2" />
               API Documentation
@@ -334,12 +334,12 @@ Data:
 
       <main className="max-w-5xl mx-auto px-6 py-8">
         <Tabs defaultValue="api-keys" className="space-y-6">
-          <TabsList className="bg-[#0f0f1a] border border-[rgba(255,255,255,0.1)]">
-            <TabsTrigger value="api-keys" className="gap-2 data-[state=active]:bg-[#7c3aed] data-[state=active]:text-white">
+          <TabsList className="bg-[var(--bg-secondary)] border border-[var(--border)]">
+            <TabsTrigger value="api-keys" className="gap-2 data-[state=active]:bg-[var(--accent-primary)] data-[state=active]:text-white">
               <Key className="h-4 w-4" />
               API Keys
             </TabsTrigger>
-            <TabsTrigger value="request-builder" className="gap-2 data-[state=active]:bg-[#7c3aed] data-[state=active]:text-white">
+            <TabsTrigger value="request-builder" className="gap-2 data-[state=active]:bg-[var(--accent-primary)] data-[state=active]:text-white">
               <Link2 className="h-4 w-4" />
               API Request Builder
             </TabsTrigger>
@@ -349,14 +349,14 @@ Data:
             {/* API Keys Header */}
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-xl font-semibold text-white">API Keys</h2>
-                <p className="text-gray-400 mt-1">
+                <h2 className="text-xl font-semibold text-[var(--text-primary)]">API Keys</h2>
+                <p className="text-[var(--text-secondary)] mt-1">
                   Manage API keys for programmatic access to NotebookLM Reimagined
                 </p>
               </div>
               <Button
                 onClick={() => setCreateDialogOpen(true)}
-                className="bg-[#7c3aed] hover:bg-[#6d28d9] text-white"
+                className="bg-[var(--accent-primary)] hover:bg-[var(--accent-primary)]/80 text-white"
               >
                 <Plus className="h-4 w-4 mr-2" />
                 Create API Key
@@ -364,22 +364,22 @@ Data:
             </div>
 
             {/* Usage Example */}
-            <div className="bg-[#0f0f1a] border border-[rgba(255,255,255,0.1)] rounded-lg p-4">
+            <div className="bg-[var(--bg-secondary)] border border-[var(--border)] rounded-lg p-4">
               <div className="flex items-center justify-between mb-2">
-                <h3 className="text-sm font-medium text-white">Quick Start</h3>
+                <h3 className="text-sm font-medium text-[var(--text-primary)]">Quick Start</h3>
                 <Button
                   variant="link"
                   size="sm"
                   onClick={() => router.push('/docs')}
-                  className="text-[#7c3aed] hover:text-[#a78bfa] px-0"
+                  className="text-[var(--accent-primary)] hover:text-[var(--accent-primary)]/80 px-0"
                 >
                   View Full Documentation →
                 </Button>
               </div>
-              <p className="text-gray-400 text-sm mb-3">
-                Use your API key with the <code className="bg-[rgba(255,255,255,0.1)] px-1.5 py-0.5 rounded text-[#7c3aed]">X-API-Key</code> header:
+              <p className="text-[var(--text-secondary)] text-sm mb-3">
+                Use your API key with the <code className="bg-[var(--bg-tertiary)] px-1.5 py-0.5 rounded text-[var(--accent-primary)]">X-API-Key</code> header:
               </p>
-              <pre className="bg-[rgba(0,0,0,0.3)] p-3 rounded text-sm text-gray-300 overflow-x-auto">
+              <pre className="bg-[var(--bg-tertiary)] p-3 rounded text-sm text-[var(--text-secondary)] overflow-x-auto">
 {`curl -X POST https://notebooklm-api.vercel.app/api/v1/notebooks/{id}/chat \\
   -H "X-API-Key: nb_live_your_key_here" \\
   -H "Content-Type: application/json" \\
@@ -390,22 +390,22 @@ Data:
             {/* API Keys List */}
             <div className="space-y-4">
               {loading ? (
-                <div className="text-center py-12 text-gray-400">
+                <div className="text-center py-12 text-[var(--text-secondary)]">
                   <RefreshCw className="h-8 w-8 mx-auto mb-4 animate-spin" />
                   Loading API keys...
                 </div>
               ) : apiKeys.length === 0 ? (
-                <div className="bg-[#0f0f1a] border border-[rgba(255,255,255,0.1)] rounded-lg py-12 text-center">
-                  <Key className="h-12 w-12 mx-auto text-gray-600 mb-4" />
-                  <h3 className="text-lg font-medium text-white mb-2">
+                <div className="bg-[var(--bg-secondary)] border border-[var(--border)] rounded-lg py-12 text-center">
+                  <Key className="h-12 w-12 mx-auto text-[var(--text-tertiary)] mb-4" />
+                  <h3 className="text-lg font-medium text-[var(--text-primary)] mb-2">
                     No API Keys
                   </h3>
-                  <p className="text-gray-400 mb-4">
+                  <p className="text-[var(--text-secondary)] mb-4">
                     Create an API key to access NotebookLM Reimagined programmatically
                   </p>
                   <Button
                     onClick={() => setCreateDialogOpen(true)}
-                    className="bg-[#7c3aed] hover:bg-[#6d28d9] text-white"
+                    className="bg-[var(--accent-primary)] hover:bg-[var(--accent-primary)]/80 text-white"
                   >
                     <Plus className="h-4 w-4 mr-2" />
                     Create Your First API Key
@@ -415,16 +415,16 @@ Data:
                 apiKeys.map((key) => (
                   <div
                     key={key.id}
-                    className="bg-[#0f0f1a] border border-[rgba(255,255,255,0.1)] rounded-lg p-4"
+                    className="bg-[var(--bg-secondary)] border border-[var(--border)] rounded-lg p-4"
                   >
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-3">
-                        <div className={`w-2 h-2 rounded-full ${key.is_active ? 'bg-green-500' : 'bg-gray-500'}`} />
-                        <h3 className="text-lg font-medium text-white">
+                        <div className={`w-2 h-2 rounded-full ${key.is_active ? 'bg-[var(--success)]' : 'bg-[var(--text-tertiary)]'}`} />
+                        <h3 className="text-lg font-medium text-[var(--text-primary)]">
                           {key.name}
                         </h3>
                         {!key.is_active && (
-                          <Badge variant="secondary" className="bg-gray-700 text-gray-300">
+                          <Badge variant="secondary" className="bg-[var(--bg-tertiary)] text-[var(--text-secondary)]">
                             Disabled
                           </Badge>
                         )}
@@ -434,7 +434,7 @@ Data:
                           variant="ghost"
                           size="sm"
                           onClick={() => toggleApiKey(key.id, key.is_active)}
-                          className="text-gray-400 hover:text-white"
+                          className="text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
                           title={key.is_active ? 'Disable key' : 'Enable key'}
                         >
                           {key.is_active ? (
@@ -447,7 +447,7 @@ Data:
                           variant="ghost"
                           size="sm"
                           onClick={() => revokeApiKey(key.id, key.name)}
-                          className="text-red-400 hover:text-red-300 hover:bg-red-900/20"
+                          className="text-[var(--error)] hover:text-[var(--error)] hover:bg-[var(--error)]/10"
                           title="Revoke key"
                         >
                           <Trash2 className="h-4 w-4" />
@@ -456,20 +456,20 @@ Data:
                     </div>
 
                     {key.description && (
-                      <p className="text-gray-400 text-sm mb-3">{key.description}</p>
+                      <p className="text-[var(--text-secondary)] text-sm mb-3">{key.description}</p>
                     )}
 
                     <div className="flex items-center gap-4 text-sm mb-3">
-                      <div className="font-mono bg-[rgba(255,255,255,0.05)] px-3 py-1.5 rounded text-gray-400">
+                      <div className="font-mono bg-[var(--bg-tertiary)] px-3 py-1.5 rounded text-[var(--text-secondary)]">
                         {key.key_prefix}
                       </div>
-                      <div className="text-gray-500">
+                      <div className="text-[var(--text-tertiary)]">
                         Created: {formatDate(key.created_at)}
                       </div>
-                      <div className="text-gray-500">
+                      <div className="text-[var(--text-tertiary)]">
                         Last used: {formatDate(key.last_used_at)}
                       </div>
-                      <div className="text-gray-500">
+                      <div className="text-[var(--text-tertiary)]">
                         {key.total_requests.toLocaleString()} requests
                       </div>
                     </div>
@@ -479,7 +479,7 @@ Data:
                         <Badge
                           key={scope}
                           variant="secondary"
-                          className="bg-[rgba(124,58,237,0.2)] text-[#a78bfa] border-0"
+                          className="bg-[var(--accent-primary)]/20 text-[var(--accent-primary)] border-0"
                         >
                           {scope === '*' ? 'Full Access' : scope}
                         </Badge>
@@ -493,34 +493,34 @@ Data:
 
           {/* API Request Builder Tab */}
           <TabsContent value="request-builder" className="space-y-6">
-            <div className="bg-[#0f0f1a] border border-[rgba(255,255,255,0.1)] rounded-lg p-6">
+            <div className="bg-[var(--bg-secondary)] border border-[var(--border)] rounded-lg p-6">
               <div className="flex items-center gap-3 mb-2">
-                <Link2 className="h-5 w-5 text-[#7c3aed]" />
-                <h2 className="text-lg font-medium text-white">API Request Builder</h2>
+                <Link2 className="h-5 w-5 text-[var(--accent-primary)]" />
+                <h2 className="text-lg font-medium text-[var(--text-primary)]">API Request Builder</h2>
               </div>
-              <p className="text-gray-400 text-sm mb-6">
+              <p className="text-[var(--text-secondary)] text-sm mb-6">
                 Select an operation and notebook to generate ready-to-use API requests for n8n, Zapier, Make, or cURL.
               </p>
 
               <div className="space-y-6">
                 {/* Operation & Notebook Selector */}
-                <div className="bg-[rgba(124,58,237,0.1)] border border-[#7c3aed]/30 rounded-lg p-4 space-y-4">
+                <div className="bg-[var(--accent-primary)]/10 border border-[var(--accent-primary)]/30 rounded-lg p-4 space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {/* Operation Selector */}
                     <div className="space-y-2">
-                      <label className="text-sm font-medium text-gray-300">Operation</label>
+                      <label className="text-sm font-medium text-[var(--text-secondary)]">Operation</label>
                       <Select value={selectedOperation} onValueChange={(v) => setSelectedOperation(v as OperationType)}>
-                        <SelectTrigger className="bg-[rgba(0,0,0,0.3)] border-[rgba(255,255,255,0.1)] text-white">
+                        <SelectTrigger className="bg-[var(--bg-tertiary)] border-[var(--border)] text-[var(--text-primary)]">
                           <SelectValue placeholder="Select operation" />
                         </SelectTrigger>
-                        <SelectContent className="bg-[#1a1a2e] border-[rgba(255,255,255,0.1)]">
+                        <SelectContent className="bg-[var(--bg-secondary)] border-[var(--border)]">
                           {operations.map((op) => (
-                            <SelectItem key={op.value} value={op.value} className="text-white hover:bg-[rgba(255,255,255,0.1)]">
+                            <SelectItem key={op.value} value={op.value} className="text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)]">
                               <div className="flex items-center gap-2">
                                 {op.icon}
                                 <span>{op.label}</span>
                                 <span className={`ml-2 text-xs px-1.5 py-0.5 rounded ${
-                                  op.method === 'GET' ? 'bg-green-500/20 text-green-400' : 'bg-blue-500/20 text-blue-400'
+                                  op.method === 'GET' ? 'bg-[var(--success)]/20 text-[var(--success)]' : 'bg-[var(--info)]/20 text-[var(--info)]'
                                 }`}>
                                   {op.method}
                                 </span>
@@ -533,14 +533,14 @@ Data:
 
                     {/* Notebook Selector */}
                     <div className="space-y-2">
-                      <label className="text-sm font-medium text-gray-300 flex items-center gap-2">
+                      <label className="text-sm font-medium text-[var(--text-secondary)] flex items-center gap-2">
                         Notebook
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={loadNotebooks}
                           disabled={loadingNotebooks}
-                          className="h-6 w-6 p-0 text-gray-400 hover:text-white"
+                          className="h-6 w-6 p-0 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
                         >
                           <RefreshCw className={`h-3 w-3 ${loadingNotebooks ? 'animate-spin' : ''}`} />
                         </Button>
@@ -550,15 +550,15 @@ Data:
                         onValueChange={setSelectedNotebook}
                         disabled={!currentOp.needsNotebook}
                       >
-                        <SelectTrigger className={`bg-[rgba(0,0,0,0.3)] border-[rgba(255,255,255,0.1)] text-white ${!currentOp.needsNotebook ? 'opacity-50' : ''}`}>
+                        <SelectTrigger className={`bg-[var(--bg-tertiary)] border-[var(--border)] text-[var(--text-primary)] ${!currentOp.needsNotebook ? 'opacity-50' : ''}`}>
                           <SelectValue placeholder={currentOp.needsNotebook ? "Select notebook" : "Not required"} />
                         </SelectTrigger>
-                        <SelectContent className="bg-[#1a1a2e] border-[rgba(255,255,255,0.1)]">
+                        <SelectContent className="bg-[var(--bg-secondary)] border-[var(--border)]">
                           {notebooks.length === 0 ? (
-                            <div className="px-3 py-2 text-sm text-gray-400">No notebooks found</div>
+                            <div className="px-3 py-2 text-sm text-[var(--text-secondary)]">No notebooks found</div>
                           ) : (
                             notebooks.map((nb) => (
-                              <SelectItem key={nb.id} value={nb.id} className="text-white hover:bg-[rgba(255,255,255,0.1)]">
+                              <SelectItem key={nb.id} value={nb.id} className="text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)]">
                                 <div className="flex items-center gap-2">
                                   <span>{nb.emoji || '📓'}</span>
                                   <span>{nb.name}</span>
@@ -574,23 +574,23 @@ Data:
                   {/* Selected info */}
                   {currentOp.needsNotebook && selectedNotebookData && (
                     <div className="flex items-center gap-2 text-sm">
-                      <span className="text-gray-400">Target:</span>
-                      <span className="text-white font-medium">{selectedNotebookData.emoji || '📓'} {selectedNotebookData.name}</span>
-                      <code className="text-xs text-gray-500 bg-[rgba(0,0,0,0.3)] px-2 py-0.5 rounded">{selectedNotebook.slice(0, 8)}...</code>
+                      <span className="text-[var(--text-secondary)]">Target:</span>
+                      <span className="text-[var(--text-primary)] font-medium">{selectedNotebookData.emoji || '📓'} {selectedNotebookData.name}</span>
+                      <code className="text-xs text-[var(--text-tertiary)] bg-[var(--bg-tertiary)] px-2 py-0.5 rounded">{selectedNotebook.slice(0, 8)}...</code>
                     </div>
                   )}
                 </div>
 
                 {/* Server URL */}
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-300">Server URL</label>
+                  <label className="text-sm font-medium text-[var(--text-secondary)]">Server URL</label>
                   <div className="relative">
-                    <pre className="bg-[rgba(0,0,0,0.3)] p-4 pr-16 rounded-lg text-sm font-mono text-white overflow-x-auto">
+                    <pre className="bg-[var(--bg-tertiary)] p-4 pr-16 rounded-lg text-sm font-mono text-[var(--text-primary)] overflow-x-auto">
                       {apiUrl}
                     </pre>
                     <Button
                       size="sm"
-                      className="absolute top-2 right-2 bg-[#7c3aed] hover:bg-[#6d28d9]"
+                      className="absolute top-2 right-2 bg-[var(--accent-primary)] hover:bg-[var(--accent-primary)]/80"
                       onClick={() => copyToClipboardField(apiUrl, 'url')}
                     >
                       {copiedField === 'url' ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
@@ -600,28 +600,28 @@ Data:
 
                 {/* API Key */}
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-300 flex items-center gap-2">
+                  <label className="text-sm font-medium text-[var(--text-secondary)] flex items-center gap-2">
                     <Key className="h-4 w-4" />
                     API Key
                   </label>
                   {activeKey ? (
                     <div className="relative">
-                      <pre className="bg-[rgba(0,0,0,0.3)] p-4 pr-16 rounded-lg text-sm font-mono text-white overflow-x-auto">
+                      <pre className="bg-[var(--bg-tertiary)] p-4 pr-16 rounded-lg text-sm font-mono text-[var(--text-primary)] overflow-x-auto">
                         {apiKeyDisplay}
                       </pre>
-                      <p className="text-xs text-gray-500 mt-2">
+                      <p className="text-xs text-[var(--text-tertiary)] mt-2">
                         Full key shown only once when created. Go to the{' '}
-                        <button onClick={() => {}} className="text-[#7c3aed] hover:underline">
+                        <button onClick={() => {}} className="text-[var(--accent-primary)] hover:underline">
                           API Keys tab
                         </button>{' '}
                         to manage keys.
                       </p>
                     </div>
                   ) : (
-                    <div className="bg-[rgba(255,200,0,0.1)] border border-yellow-600/30 rounded-lg p-4">
-                      <p className="text-yellow-200 text-sm">
+                    <div className="bg-[var(--warning)]/10 border border-[var(--warning)]/30 rounded-lg p-4">
+                      <p className="text-[var(--warning)] text-sm">
                         No API key found.{' '}
-                        <button onClick={() => setCreateDialogOpen(true)} className="text-[#7c3aed] hover:underline font-medium">
+                        <button onClick={() => setCreateDialogOpen(true)} className="text-[var(--accent-primary)] hover:underline font-medium">
                           Create one now
                         </button>
                       </p>
@@ -631,22 +631,22 @@ Data:
 
                 {/* cURL Example */}
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-300 flex items-center gap-2">
+                  <label className="text-sm font-medium text-[var(--text-secondary)] flex items-center gap-2">
                     <Code className="h-4 w-4" />
                     cURL: {currentOp.label}
                     <span className={`text-xs px-1.5 py-0.5 rounded ${
-                      currentOp.method === 'GET' ? 'bg-green-500/20 text-green-400' : 'bg-blue-500/20 text-blue-400'
+                      currentOp.method === 'GET' ? 'bg-[var(--success)]/20 text-[var(--success)]' : 'bg-[var(--info)]/20 text-[var(--info)]'
                     }`}>
                       {currentOp.method}
                     </span>
                   </label>
                   <div className="relative">
-                    <pre className="bg-[rgba(0,0,0,0.3)] p-4 pr-16 rounded-lg text-sm font-mono text-green-400 overflow-x-auto whitespace-pre-wrap">
+                    <pre className="bg-[var(--bg-tertiary)] p-4 pr-16 rounded-lg text-sm font-mono text-[var(--success)] overflow-x-auto whitespace-pre-wrap">
                       {curlExample}
                     </pre>
                     <Button
                       size="sm"
-                      className="absolute top-2 right-2 bg-[#7c3aed] hover:bg-[#6d28d9]"
+                      className="absolute top-2 right-2 bg-[var(--accent-primary)] hover:bg-[var(--accent-primary)]/80"
                       onClick={() => copyToClipboardField(curlExample, 'curl')}
                     >
                       {copiedField === 'curl' ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
@@ -656,17 +656,17 @@ Data:
 
                 {/* n8n Config */}
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-300 flex items-center gap-2">
+                  <label className="text-sm font-medium text-[var(--text-secondary)] flex items-center gap-2">
                     <img src="https://n8n.io/favicon.ico" alt="n8n" className="h-4 w-4" />
                     n8n HTTP Request Node
                   </label>
                   <div className="relative">
-                    <pre className="bg-[rgba(0,0,0,0.3)] p-4 pr-16 rounded-lg text-sm font-mono text-blue-400 overflow-x-auto whitespace-pre-wrap">
+                    <pre className="bg-[var(--bg-tertiary)] p-4 pr-16 rounded-lg text-sm font-mono text-[var(--info)] overflow-x-auto whitespace-pre-wrap">
                       {n8nConfig}
                     </pre>
                     <Button
                       size="sm"
-                      className="absolute top-2 right-2 bg-[#7c3aed] hover:bg-[#6d28d9]"
+                      className="absolute top-2 right-2 bg-[var(--accent-primary)] hover:bg-[var(--accent-primary)]/80"
                       onClick={() => copyToClipboardField(n8nConfig, 'n8n')}
                     >
                       {copiedField === 'n8n' ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
@@ -676,17 +676,17 @@ Data:
 
                 {/* Make Config */}
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-300 flex items-center gap-2">
+                  <label className="text-sm font-medium text-[var(--text-secondary)] flex items-center gap-2">
                     <ExternalLink className="h-4 w-4" />
                     Make (Integromat) HTTP Module
                   </label>
                   <div className="relative">
-                    <pre className="bg-[rgba(0,0,0,0.3)] p-4 pr-16 rounded-lg text-sm font-mono text-purple-400 overflow-x-auto whitespace-pre-wrap">
+                    <pre className="bg-[var(--bg-tertiary)] p-4 pr-16 rounded-lg text-sm font-mono text-[var(--accent-primary)] overflow-x-auto whitespace-pre-wrap">
                       {makeConfig}
                     </pre>
                     <Button
                       size="sm"
-                      className="absolute top-2 right-2 bg-[#7c3aed] hover:bg-[#6d28d9]"
+                      className="absolute top-2 right-2 bg-[var(--accent-primary)] hover:bg-[var(--accent-primary)]/80"
                       onClick={() => copyToClipboardField(makeConfig, 'make')}
                     >
                       {copiedField === 'make' ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
@@ -696,17 +696,17 @@ Data:
 
                 {/* Zapier Config */}
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-300 flex items-center gap-2">
+                  <label className="text-sm font-medium text-[var(--text-secondary)] flex items-center gap-2">
                     <ExternalLink className="h-4 w-4" />
                     Zapier Webhooks
                   </label>
                   <div className="relative">
-                    <pre className="bg-[rgba(0,0,0,0.3)] p-4 pr-16 rounded-lg text-sm font-mono text-orange-400 overflow-x-auto whitespace-pre-wrap">
+                    <pre className="bg-[var(--bg-tertiary)] p-4 pr-16 rounded-lg text-sm font-mono text-[var(--warning)] overflow-x-auto whitespace-pre-wrap">
                       {zapierConfig}
                     </pre>
                     <Button
                       size="sm"
-                      className="absolute top-2 right-2 bg-[#7c3aed] hover:bg-[#6d28d9]"
+                      className="absolute top-2 right-2 bg-[var(--accent-primary)] hover:bg-[var(--accent-primary)]/80"
                       onClick={() => copyToClipboardField(zapierConfig, 'zapier')}
                     >
                       {copiedField === 'zapier' ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
@@ -715,8 +715,8 @@ Data:
                 </div>
 
                 {/* Available Endpoints */}
-                <div className="space-y-2 pt-4 border-t border-[rgba(255,255,255,0.1)]">
-                  <label className="text-sm font-medium text-gray-300">Popular Endpoints</label>
+                <div className="space-y-2 pt-4 border-t border-[var(--border)]">
+                  <label className="text-sm font-medium text-[var(--text-secondary)]">Popular Endpoints</label>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {[
                       { method: 'GET', path: '/api/v1/notebooks', desc: 'List all notebooks' },
@@ -726,22 +726,22 @@ Data:
                     ].map((endpoint) => (
                       <div
                         key={endpoint.path}
-                        className="bg-[rgba(0,0,0,0.2)] rounded-lg p-3 flex items-start gap-2"
+                        className="bg-[var(--bg-tertiary)] rounded-lg p-3 flex items-start gap-2"
                       >
                         <span className={`text-xs font-mono px-1.5 py-0.5 rounded ${
-                          endpoint.method === 'GET' ? 'bg-green-500/20 text-green-400' : 'bg-blue-500/20 text-blue-400'
+                          endpoint.method === 'GET' ? 'bg-[var(--success)]/20 text-[var(--success)]' : 'bg-[var(--info)]/20 text-[var(--info)]'
                         }`}>
                           {endpoint.method}
                         </span>
                         <div>
-                          <code className="text-xs text-gray-300">{endpoint.path}</code>
-                          <p className="text-xs text-gray-500 mt-0.5">{endpoint.desc}</p>
+                          <code className="text-xs text-[var(--text-secondary)]">{endpoint.path}</code>
+                          <p className="text-xs text-[var(--text-tertiary)] mt-0.5">{endpoint.desc}</p>
                         </div>
                       </div>
                     ))}
                   </div>
-                  <p className="text-xs text-gray-500 mt-2">
-                    <Link href="/docs" className="text-[#7c3aed] hover:underline">
+                  <p className="text-xs text-[var(--text-tertiary)] mt-2">
+                    <Link href="/docs" className="text-[var(--accent-primary)] hover:underline">
                       View full API documentation →
                     </Link>
                   </p>
@@ -754,45 +754,45 @@ Data:
 
       {/* Create API Key Dialog */}
       <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-        <DialogContent className="sm:max-w-lg bg-[#0f0f1a] border-[rgba(255,255,255,0.1)] text-white">
+        <DialogContent className="sm:max-w-lg bg-[var(--bg-secondary)] border-[var(--border)] text-[var(--text-primary)]">
           <DialogHeader>
             <DialogTitle>Create API Key</DialogTitle>
-            <DialogDescription className="text-gray-400">
+            <DialogDescription className="text-[var(--text-secondary)]">
               Create a new API key for programmatic access. The key will only be shown once.
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium text-white">Name *</label>
+              <label className="text-sm font-medium text-[var(--text-primary)]">Name *</label>
               <Input
                 placeholder="My API Key"
                 value={newKeyName}
                 onChange={(e) => setNewKeyName(e.target.value)}
-                className="bg-[rgba(255,255,255,0.05)] border-[rgba(255,255,255,0.1)] text-white placeholder:text-gray-500"
+                className="bg-[var(--bg-tertiary)] border-[var(--border)] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)]"
               />
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium text-white">
-                Description <span className="text-gray-500">(optional)</span>
+              <label className="text-sm font-medium text-[var(--text-primary)]">
+                Description <span className="text-[var(--text-tertiary)]">(optional)</span>
               </label>
               <Textarea
                 placeholder="What is this key for?"
                 value={newKeyDescription}
                 onChange={(e) => setNewKeyDescription(e.target.value)}
-                className="bg-[rgba(255,255,255,0.05)] border-[rgba(255,255,255,0.1)] text-white placeholder:text-gray-500"
+                className="bg-[var(--bg-tertiary)] border-[var(--border)] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)]"
                 rows={2}
               />
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium text-white">Permissions</label>
+              <label className="text-sm font-medium text-[var(--text-primary)]">Permissions</label>
               <div className="grid grid-cols-2 gap-2">
                 {API_KEY_SCOPES.map((scope) => (
                   <label
                     key={scope.value}
-                    className="flex items-center gap-2 p-2 rounded bg-[rgba(255,255,255,0.05)] cursor-pointer hover:bg-[rgba(255,255,255,0.08)]"
+                    className="flex items-center gap-2 p-2 rounded bg-[var(--bg-tertiary)] cursor-pointer hover:bg-[var(--bg-surface)]"
                   >
                     <Checkbox
                       checked={newKeyScopes.includes(scope.value)}
@@ -807,11 +807,11 @@ Data:
                           }
                         }
                       }}
-                      className="border-gray-500 data-[state=checked]:bg-[#7c3aed] data-[state=checked]:border-[#7c3aed]"
+                      className="border-[var(--text-tertiary)] data-[state=checked]:bg-[var(--accent-primary)] data-[state=checked]:border-[var(--accent-primary)]"
                     />
                     <div>
-                      <span className="text-sm text-white">{scope.label}</span>
-                      <p className="text-xs text-gray-500">{scope.description}</p>
+                      <span className="text-sm text-[var(--text-primary)]">{scope.label}</span>
+                      <p className="text-xs text-[var(--text-tertiary)]">{scope.description}</p>
                     </div>
                   </label>
                 ))}
@@ -820,25 +820,25 @@ Data:
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label className="text-sm font-medium text-white">
+                <label className="text-sm font-medium text-[var(--text-primary)]">
                   Rate Limit (per minute)
                 </label>
                 <Input
                   type="number"
                   value={newKeyRpm}
                   onChange={(e) => setNewKeyRpm(parseInt(e.target.value) || 60)}
-                  className="bg-[rgba(255,255,255,0.05)] border-[rgba(255,255,255,0.1)] text-white"
+                  className="bg-[var(--bg-tertiary)] border-[var(--border)] text-[var(--text-primary)]"
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium text-white">
+                <label className="text-sm font-medium text-[var(--text-primary)]">
                   Rate Limit (per day)
                 </label>
                 <Input
                   type="number"
                   value={newKeyRpd}
                   onChange={(e) => setNewKeyRpd(parseInt(e.target.value) || 10000)}
-                  className="bg-[rgba(255,255,255,0.05)] border-[rgba(255,255,255,0.1)] text-white"
+                  className="bg-[var(--bg-tertiary)] border-[var(--border)] text-[var(--text-primary)]"
                 />
               </div>
             </div>
@@ -848,14 +848,14 @@ Data:
             <Button
               variant="outline"
               onClick={() => setCreateDialogOpen(false)}
-              className="border-[rgba(255,255,255,0.1)] text-gray-400 hover:text-white hover:bg-[rgba(255,255,255,0.05)]"
+              className="border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)]"
             >
               Cancel
             </Button>
             <Button
               onClick={createApiKey}
               disabled={!newKeyName.trim() || creating}
-              className="bg-[#7c3aed] hover:bg-[#6d28d9] text-white"
+              className="bg-[var(--accent-primary)] hover:bg-[var(--accent-primary)]/80 text-white"
             >
               {creating ? 'Creating...' : 'Create Key'}
             </Button>
@@ -865,25 +865,25 @@ Data:
 
       {/* New Key Secret Dialog */}
       <Dialog open={newKeyDialogOpen} onOpenChange={setNewKeyDialogOpen}>
-        <DialogContent className="sm:max-w-lg bg-[#0f0f1a] border-[rgba(255,255,255,0.1)] text-white">
+        <DialogContent className="sm:max-w-lg bg-[var(--bg-secondary)] border-[var(--border)] text-[var(--text-primary)]">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-yellow-500" />
+              <AlertTriangle className="h-5 w-5 text-[var(--warning)]" />
               Save Your API Key
             </DialogTitle>
-            <DialogDescription className="text-gray-400">
+            <DialogDescription className="text-[var(--text-secondary)]">
               This is the only time you will see this key. Copy and store it securely.
             </DialogDescription>
           </DialogHeader>
 
           <div className="py-4">
             <div className="relative">
-              <pre className="bg-[rgba(0,0,0,0.3)] p-4 rounded-lg text-sm font-mono text-white overflow-x-auto break-all whitespace-pre-wrap">
+              <pre className="bg-[var(--bg-tertiary)] p-4 rounded-lg text-sm font-mono text-[var(--text-primary)] overflow-x-auto break-all whitespace-pre-wrap">
                 {newKeySecret}
               </pre>
               <Button
                 size="sm"
-                className="absolute top-2 right-2 bg-[#7c3aed] hover:bg-[#6d28d9]"
+                className="absolute top-2 right-2 bg-[var(--accent-primary)] hover:bg-[var(--accent-primary)]/80"
                 onClick={() => copyToClipboard(newKeySecret)}
               >
                 {copied ? (
@@ -894,8 +894,8 @@ Data:
               </Button>
             </div>
 
-            <div className="mt-4 p-3 bg-yellow-900/20 border border-yellow-700/30 rounded-lg">
-              <p className="text-sm text-yellow-200">
+            <div className="mt-4 p-3 bg-[var(--warning)]/10 border border-[var(--warning)]/30 rounded-lg">
+              <p className="text-sm text-[var(--warning)]">
                 <strong>Important:</strong> Store this key securely. You won&apos;t be able to see it again.
                 If you lose it, you&apos;ll need to create a new one.
               </p>
@@ -908,7 +908,7 @@ Data:
                 setNewKeyDialogOpen(false)
                 setNewKeySecret('')
               }}
-              className="bg-[#7c3aed] hover:bg-[#6d28d9] text-white"
+              className="bg-[var(--accent-primary)] hover:bg-[var(--accent-primary)]/80 text-white"
             >
               I&apos;ve Saved My Key
             </Button>
