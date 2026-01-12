@@ -289,6 +289,22 @@ export function AudioPlayer({ audio, isGenerating, onClose }: AudioPlayerProps) 
         <Button
           variant="outline"
           className="w-full mt-4 rounded-xl border-[rgba(255,255,255,0.1)]"
+          onClick={async () => {
+            try {
+              const response = await fetch(audio.audio_url!)
+              const blob = await response.blob()
+              const url = window.URL.createObjectURL(blob)
+              const a = document.createElement('a')
+              a.href = url
+              a.download = `${formatNames[audio.format] || 'audio-overview'}-${new Date(audio.created_at).toISOString().slice(0, 10)}.mp3`
+              document.body.appendChild(a)
+              a.click()
+              window.URL.revokeObjectURL(url)
+              document.body.removeChild(a)
+            } catch (error) {
+              console.error('Download failed:', error)
+            }
+          }}
         >
           <Download className="h-4 w-4 mr-2" />
           Download Audio
