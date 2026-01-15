@@ -1,51 +1,57 @@
-'use client'
+'use client';
 
-import { useState } from 'react'
-import { createClient } from '@/lib/supabase'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import { BookOpen, Loader2 } from 'lucide-react'
-import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { toast } from 'sonner'
+import { BookOpen, Loader2 } from 'lucide-react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+import { toast } from 'sonner';
+
+import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { createClient } from '@/lib/supabase';
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [loading, setLoading] = useState(false)
-  const router = useRouter()
-  const supabase = createClient()
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
+  const supabase = createClient();
 
   const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
+    e.preventDefault();
+    setLoading(true);
 
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
-    })
+    });
 
     if (error) {
-      toast.error(error.message)
+      toast.error(error.message);
     } else {
-      toast.success('Welcome back!')
-      router.push('/')
+      toast.success('Welcome back!');
+      router.push('/');
     }
-    setLoading(false)
-  }
+    setLoading(false);
+  };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+    <div className="bg-background flex min-h-screen items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <div className="flex justify-center mb-4">
-            <BookOpen className="h-10 w-10 text-primary" />
+          <div className="mb-4 flex justify-center">
+            <BookOpen className="text-primary h-10 w-10" />
           </div>
           <CardTitle className="text-2xl">Welcome Back</CardTitle>
-          <CardDescription>
-            Sign in to your NotebookLM Reimagined account
-          </CardDescription>
+          <CardDescription>Sign in to your NotebookLM Reimagined account</CardDescription>
         </CardHeader>
         <form onSubmit={handleLogin}>
           <CardContent className="space-y-4">
@@ -78,10 +84,10 @@ export default function LoginPage() {
           </CardContent>
           <CardFooter className="flex flex-col gap-4">
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Sign In
             </Button>
-            <p className="text-sm text-muted-foreground text-center">
+            <p className="text-muted-foreground text-center text-sm">
               Don&apos;t have an account?{' '}
               <Link href="/auth/register" className="text-primary hover:underline">
                 Sign up
@@ -91,5 +97,5 @@ export default function LoginPage() {
         </form>
       </Card>
     </div>
-  )
+  );
 }

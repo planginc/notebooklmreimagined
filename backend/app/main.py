@@ -1,7 +1,10 @@
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse
 import uuid
+import hashlib
+from datetime import datetime
 
 from app.config import get_settings
 from app.routers import notebooks, sources, chat, audio, video, research, study, notes, api_keys, global_chat, studio, export, profile
@@ -16,6 +19,9 @@ app = FastAPI(
     redoc_url="/redoc",
 )
 
+# GZip compression for responses > 1KB
+app.add_middleware(GZipMiddleware, minimum_size=1000)
+
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
@@ -26,13 +32,75 @@ app.add_middleware(
 )
 
 
-# Request ID middleware
+# Cache control patterns
+CACHE_PATTERNS = {
+    # Public cacheable endpoints (short cache for list endpoints)
+    "/api/v1/notebooks": ("private", 60),  # 1 minute
+    "/api/v1/sources": ("private", 60),
+    "/api/v1/notes": ("private", 60),
+    # Longer cache for specific resources
+    "/api/v1/notebooks/": ("private", 300),  # 5 minutes
+    "/api/v1/sources/": ("private", 300),
+    # No cache for mutation-heavy endpoints
+    "/api/v1/chat": ("no-store", 0),
+    "/api/v1/global-chat": ("no-store", 0),
+    "/api/v1/audio": ("no-store", 0),
+    "/api/v1/video": ("no-store", 0),
+    "/api/v1/research": ("no-store", 0),
+    "/api/v1/study": ("no-store", 0),
+    "/api/v1/studio": ("no-store", 0),
+    # Health/docs
+    "/health": ("public", 60),
+    "/docs": ("public", 3600),
+    "/redoc": ("public", 3600),
+}
+
+
+def get_cache_headers(path: str, method: str) -> dict:
+    """Determine appropriate cache headers based on path and method."""
+    # Only cache GET requests
+    if method != "GET":
+        return {"Cache-Control": "no-store"}
+
+    # Check for matching pattern
+    for pattern, (cache_type, max_age) in CACHE_PATTERNS.items():
+        if path.startswith(pattern):
+            if cache_type == "no-store":
+                return {"Cache-Control": "no-store"}
+            return {
+                "Cache-Control": f"{cache_type}, max-age={max_age}",
+                "Vary": "Authorization, Accept-Encoding",
+            }
+
+    # Default: private, short cache
+    return {
+        "Cache-Control": "private, max-age=30",
+        "Vary": "Authorization, Accept-Encoding",
+    }
+
+
+# Request ID and caching middleware
 @app.middleware("http")
-async def add_request_id(request: Request, call_next):
+async def add_request_id_and_cache(request: Request, call_next):
     request_id = str(uuid.uuid4())[:8]
     request.state.request_id = request_id
+
     response = await call_next(request)
+
+    # Add request ID
     response.headers["X-Request-ID"] = request_id
+
+    # Add cache headers (only if not already set)
+    if "Cache-Control" not in response.headers:
+        cache_headers = get_cache_headers(request.url.path, request.method)
+        for key, value in cache_headers.items():
+            response.headers[key] = value
+
+    # Add security headers
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+
     return response
 
 

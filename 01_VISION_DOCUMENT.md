@@ -1,5 +1,27 @@
-# Project Vision: NotebookLM Reimagined
-## An API-First Research Intelligence Platform
+# NotebookLM Reimagined: Vision Document
+
+> **An API-First Research Intelligence Platform**
+>
+> Google's NotebookLM, rebuilt as an open platform for developers.
+
+---
+
+## For Claude: How to Use This Document
+
+This document is part of a three-part specification for building NotebookLM Reimagined. Before starting:
+
+1. **Ask the user to set up these prerequisites:**
+   - Supabase project (you'll need the Supabase MCP configured)
+   - Vercel account for deployment
+   - Google AI Studio account for Gemini API key
+   - (Optional) AtlasCloud account for video generation
+
+2. **Read all three documents in order:**
+   - `01_VISION_DOCUMENT.md` (this file) - Understand the why
+   - `02_PROJECT_SPECIFICATION.md` - Complete technical spec
+   - `03_IMPLEMENTATION_GUIDE.md` - Step-by-step build instructions
+
+3. **Use the Supabase MCP** for all database operations - no Docker or local infrastructure needed.
 
 ---
 
@@ -7,124 +29,101 @@
 
 Google's NotebookLM is impressive. It takes your documents, lets you chat with them, and generates surprisingly good AI podcasts. But it has three fundamental limitations:
 
-1. **It's a walled garden.** No API. No webhooks. No automation.
-2. **It's tied to Google's ecosystem.** Can't customize, can't integrate.
-3. **It's a product, not a platform.** Use it their way or not at all.
+| Limitation | Impact |
+|------------|--------|
+| **Walled Garden** | No API. No webhooks. No automation. |
+| **Google Ecosystem Lock-in** | Can't customize, can't integrate with your stack. |
+| **Product, Not Platform** | Use it their way or not at all. |
 
-We're building the open alternative.
+**We're building the open alternative.**
 
 ---
 
 ## The Vision
 
-**Build an API-first research intelligence platform that replicates NotebookLM's functionality while exposing every feature through a clean REST API.**
+Build an API-first research intelligence platform that replicates NotebookLM's functionality while exposing **every feature through a clean REST API**.
 
-- **Every feature accessible via HTTP.** Upload a document? POST request. Generate a podcast? POST request. Query your sources? GET request.
-- **Plug into anything.** n8n workflows, Zapier automations, custom scripts, mobile apps, Slack bots.
-- **Transparent costs.** Know exactly what each operation costs. No surprises.
-- **Model flexibility.** Switch between Gemini models per-request based on quality/cost needs.
+### Core Principles
 
----
-
-## Technical Philosophy
-
-### API-First, Always
-
-The web UI is just another API client. Everything the UI does, it does through the same endpoints available to any other integration.
-
-### Supabase for Everything
-
-We use **Supabase** as our complete backend platform:
-
-- **Database**: Supabase PostgreSQL for all data
-- **Auth**: Supabase Auth for user management and API keys
-- **Storage**: Supabase Storage for files (PDFs, audio, video)
-- **Edge Functions**: For background processing and webhooks
-- **Realtime**: For live status updates on long-running jobs
-
-**Why Supabase?**
-- Zero infrastructure to manage
-- Built-in Row Level Security (RLS) for data isolation
-- Generous free tier for development
-- Production-ready from day one
-- **Supabase MCP** enables AI agents to interact directly with our backend
-
-### AI Agent Development with Supabase MCP
-
-This project is designed to be built **with AI assistance** using the Supabase MCP (Model Context Protocol). An AI agent can:
-
-- Create and manage database tables
-- Write and execute migrations
-- Query data directly
-- Deploy Edge Functions
-- Manage storage buckets
-
-This dramatically accelerates development.
-
-### Cost Transparency
-
-Every endpoint returns cost metadata:
-```json
-{
-  "result": "...",
-  "usage": {
-    "input_tokens": 15420,
-    "output_tokens": 2340,
-    "cost_usd": 0.0234,
-    "model_used": "gemini-2.5-flash"
-  }
-}
 ```
-
-### Model Flexibility
-
-Every endpoint accepts an optional `model` parameter:
-```bash
-POST /notebooks/{id}/chat
-{
-  "message": "Summarize chapter 3",
-  "model": "gemini-3-pro"  // or "gemini-2.5-flash"
-}
+┌─────────────────────────────────────────────────────────────────┐
+│                     DESIGN PRINCIPLES                            │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  1. API-FIRST, ALWAYS                                           │
+│     The web UI is just another API client.                      │
+│     Everything the UI does, any developer can do.               │
+│                                                                  │
+│  2. SUPABASE FOR EVERYTHING                                     │
+│     No Docker. No Redis. No Celery.                             │
+│     Database, Auth, Storage, Realtime - all Supabase.           │
+│                                                                  │
+│  3. COST TRANSPARENCY                                           │
+│     Every API response includes token usage and cost.           │
+│     Users know exactly what they're spending.                   │
+│                                                                  │
+│  4. MODEL FLEXIBILITY                                           │
+│     Switch between Gemini models per-request.                   │
+│     Fast & cheap vs slow & quality - user's choice.             │
+│                                                                  │
+│  5. AI-ASSISTED DEVELOPMENT                                     │
+│     Built with Supabase MCP for rapid iteration.                │
+│     This codebase is designed to be modified by AI.             │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## Architecture
+## Architecture Overview
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                         CLIENTS                                  │
-│  ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐            │
-│  │ Web UI  │  │   n8n   │  │ Zapier  │  │ Custom  │            │
-│  └────┬────┘  └────┬────┘  └────┬────┘  └────┬────┘            │
-└───────┼────────────┼────────────┼────────────┼──────────────────┘
-        │            │            │            │
-        ▼            ▼            ▼            ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                     SUPABASE BACKEND                             │
-│  ┌─────────────────────────────────────────────────────────────┐│
-│  │  Supabase Auth (JWT + API Keys)                             ││
-│  └─────────────────────────────────────────────────────────────┘│
-│  ┌─────────────────────────────────────────────────────────────┐│
-│  │  FastAPI on Supabase Edge Functions                         ││
-│  │  /notebooks  /sources  /chat  /audio  /video  /research     ││
-│  └─────────────────────────────────────────────────────────────┘│
-│  ┌───────────────┐ ┌───────────────┐ ┌───────────────┐         │
-│  │  PostgreSQL   │ │    Storage    │ │   Realtime    │         │
-│  │  (Database)   │ │   (Files)     │ │  (Live Jobs)  │         │
-│  └───────────────┘ └───────────────┘ └───────────────┘         │
-└─────────────────────────────────────────────────────────────────┘
-        │
-        ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                    GEMINI API LAYER                              │
-│  ┌─────────────────────────────────────────────────────────────┐│
-│  │  File Search  │  generateContent  │  TTS  │  Veo  │  ...   ││
-│  └─────────────────────────────────────────────────────────────┘│
-└─────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────┐
+│                           CLIENTS                                    │
+│  ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐   │
+│  │ Web UI  │  │   n8n   │  │ Zapier  │  │ Custom  │  │   AI    │   │
+│  │(Next.js)│  │         │  │         │  │  Apps   │  │ Agents  │   │
+│  └────┬────┘  └────┬────┘  └────┬────┘  └────┬────┘  └────┬────┘   │
+└───────┼────────────┼────────────┼────────────┼────────────┼─────────┘
+        │            │            │            │            │
+        └────────────┴─────┬──────┴────────────┴────────────┘
+                           │
+                           ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                      FASTAPI BACKEND                                 │
+│  ┌────────────────────────────────────────────────────────────────┐ │
+│  │  /api/v1/notebooks  │  /sources  │  /chat  │  /audio  │  /video │ │
+│  │  /research  │  /study  │  /notes  │  /export  │  /api-keys      │ │
+│  └────────────────────────────────────────────────────────────────┘ │
+│                           │                                          │
+│  ┌────────────────────────┼────────────────────────────────────────┐│
+│  │              SUPABASE (All Infrastructure)                       ││
+│  │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐           ││
+│  │  │   Supabase   │  │  PostgreSQL  │  │   Storage    │           ││
+│  │  │     Auth     │  │  (Database)  │  │   (Files)    │           ││
+│  │  │  JWT + RLS   │  │  11 Tables   │  │  3 Buckets   │           ││
+│  │  └──────────────┘  └──────────────┘  └──────────────┘           ││
+│  │                                                                  ││
+│  │  ┌──────────────┐  ┌──────────────┐                             ││
+│  │  │   Realtime   │  │     MCP      │                             ││
+│  │  │  (Updates)   │  │  (AI Dev)    │                             ││
+│  │  └──────────────┘  └──────────────┘                             ││
+│  └────────────────────────────────────────────────────────────────┘│
+└─────────────────────────────────────────────────────────────────────┘
+                           │
+                           ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                         AI SERVICES                                  │
+│  ┌──────────────────────────────────────────────────────────────┐   │
+│  │                      GEMINI API                               │   │
+│  │  generateContent  │  File Search (RAG)  │  TTS  │  Research  │   │
+│  └──────────────────────────────────────────────────────────────┘   │
+│  ┌──────────────────────────────────────────────────────────────┐   │
+│  │                  ATLASCLOUD (WAN 2.5)                         │   │
+│  │                  Text-to-Video Generation                     │   │
+│  └──────────────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────────────┘
 ```
-
-**Key architectural decision**: Uses Gemini File Search as the managed RAG system. Each Notebook maps to a Gemini File Search Store. No custom vector database needed.
 
 ---
 
@@ -132,24 +131,48 @@ POST /notebooks/{id}/chat
 
 ### Core Features (NotebookLM Parity)
 
-| Feature | Description |
-|---------|-------------|
-| **Multi-format Ingestion** | PDFs, DOCX, TXT, MD, websites, YouTube videos, audio files |
-| **RAG-Powered Chat** | Query your sources with automatic citations |
-| **Audio Overviews** | Podcast-style content (Deep Dive, Brief, Critique, Debate) |
-| **Video Overviews** | Visual explainers via Veo 3.1 |
-| **Deep Research** | Autonomous multi-step web research |
-| **Study Materials** | Flashcards, quizzes, study guides, glossaries |
-| **Mind Maps** | Interactive topic visualization |
+| Feature | Description | API Endpoint |
+|---------|-------------|--------------|
+| **Multi-format Ingestion** | PDFs, DOCX, TXT, websites, YouTube videos | `POST /sources` |
+| **RAG-Powered Chat** | Query sources with automatic citations | `POST /chat` |
+| **Audio Overviews** | Podcast-style content (Deep Dive, Brief, Critique, Debate) | `POST /audio` |
+| **Video Overviews** | Visual explainers via Wan 2.5 | `POST /video` |
+| **Deep Research** | Autonomous multi-step web research | `POST /research` |
+| **Study Materials** | Flashcards, quizzes, study guides, FAQs | `POST /flashcards`, etc. |
+| **Notes** | Create and save responses | `POST /notes` |
 
 ### Beyond NotebookLM
 
 | Feature | Description |
 |---------|-------------|
-| **Full REST API** | Every feature exposed as an HTTP endpoint |
-| **Webhooks** | Get notified when async operations complete |
+| **Full REST API** | Every feature is an HTTP endpoint |
+| **API Key Management** | Create keys with rate limits, scopes, expiration |
+| **Export Everything** | JSON, ZIP, PDF, DOCX, PPTX formats |
+| **Themes** | Dark, Light, Midnight Blue, Crimson |
 | **Usage Analytics** | Track costs and usage patterns |
-| **Multi-Tenancy** | Isolated notebooks per user |
+| **Multi-Tenancy** | Isolated notebooks per user with RLS |
+
+---
+
+## Technology Stack
+
+| Layer | Technology | Why |
+|-------|------------|-----|
+| **Database** | Supabase PostgreSQL | Managed, RLS, Realtime built-in |
+| **Auth** | Supabase Auth | JWT + API Keys, zero config |
+| **File Storage** | Supabase Storage | S3-compatible, integrated |
+| **API** | FastAPI (Python) | Fast, typed, async |
+| **AI/RAG** | Gemini API | File Search, TTS, Deep Research |
+| **Video** | AtlasCloud Wan 2.5 | High-quality text-to-video |
+| **Frontend** | Next.js 14+ | App Router, shadcn/ui |
+| **Deployment** | Vercel | Zero-config Python + Node |
+
+**What we don't need:**
+- No Docker
+- No Redis
+- No Celery
+- No self-hosted vector database
+- No infrastructure management
 
 ---
 
@@ -159,105 +182,106 @@ POST /notebooks/{id}/chat
 
 ```bash
 # Create a notebook
-curl -X POST https://your-project.supabase.co/functions/v1/notebooks \
-  -H "Authorization: Bearer $SUPABASE_ANON_KEY" \
-  -d '{"name": "Q4 Strategy Research"}'
+curl -X POST https://api.yourapp.com/api/v1/notebooks \
+  -H "Authorization: Bearer $TOKEN" \
+  -d '{"name": "Q4 Strategy Research", "emoji": "📊"}'
 
-# Upload a source
-curl -X POST https://your-project.supabase.co/functions/v1/notebooks/nb_123/sources \
+# Upload a source document
+curl -X POST https://api.yourapp.com/api/v1/notebooks/{id}/sources \
   -F "file=@quarterly_report.pdf"
 
-# Chat with sources
-curl -X POST https://your-project.supabase.co/functions/v1/notebooks/nb_123/chat \
-  -d '{"message": "What are the key risks?", "model": "gemini-2.5-flash"}'
+# Chat with your sources
+curl -X POST https://api.yourapp.com/api/v1/notebooks/{id}/chat \
+  -d '{"message": "What are the key risks mentioned?", "model": "gemini-2.0-flash"}'
 
 # Generate a podcast
-curl -X POST https://your-project.supabase.co/functions/v1/notebooks/nb_123/audio \
+curl -X POST https://api.yourapp.com/api/v1/notebooks/{id}/audio \
   -d '{"format": "deep_dive"}'
+
+# Export everything
+curl https://api.yourapp.com/api/v1/notebooks/{id}/export/zip > backup.zip
 ```
 
 ### For No-Code Users (n8n / Zapier)
 
-1. **Trigger**: New file added to Google Drive
-2. **Action**: HTTP Request → Upload to NotebookLM Reimagined
-3. **Action**: HTTP Request → Generate summary
-4. **Action**: Post summary to Slack
-5. **Action**: HTTP Request → Generate podcast
-
-All automatic, no browser needed.
-
----
-
-## Technology Stack
-
-| Layer | Technology |
-|-------|------------|
-| **Database** | Supabase PostgreSQL |
-| **Auth** | Supabase Auth |
-| **File Storage** | Supabase Storage |
-| **API** | FastAPI (Python) on Supabase Edge Functions or external hosting |
-| **Background Jobs** | Supabase Edge Functions + pg_cron |
-| **Realtime Updates** | Supabase Realtime |
-| **AI/ML** | Gemini API (File Search, TTS, Veo, Deep Research) |
-
-**No Docker. No Redis. No Celery. No infrastructure to manage.**
-
----
-
-## Model Selection Guide
-
-| Task | Recommended Model | Reason |
-|------|------------------|--------|
-| Quick queries | gemini-2.5-flash | Speed and cost |
-| Complex analysis | gemini-3-pro | Reasoning quality |
-| Audio scripts | gemini-2.5-pro | Quality/cost balance |
-| TTS | gemini-2.5-pro-tts-preview | Audio quality |
-| Video generation | veo-3.1-fast-preview | Cost ($0.10/sec) |
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                     AUTOMATION WORKFLOW                          │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  1. TRIGGER: New file added to Google Drive                     │
+│                    │                                             │
+│                    ▼                                             │
+│  2. ACTION: HTTP Request → Upload to NotebookLM API             │
+│                    │                                             │
+│                    ▼                                             │
+│  3. ACTION: HTTP Request → Generate summary                     │
+│                    │                                             │
+│                    ▼                                             │
+│  4. ACTION: Post summary to Slack                               │
+│                    │                                             │
+│                    ▼                                             │
+│  5. ACTION: HTTP Request → Generate podcast                     │
+│                    │                                             │
+│                    ▼                                             │
+│  6. ACTION: Upload MP3 to Dropbox                               │
+│                                                                  │
+│             All automatic, no browser needed.                    │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
+```
 
 ---
 
-## Cost Reference
+## Gemini Models Reference
+
+| Feature | Model | Input Cost | Output Cost |
+|---------|-------|------------|-------------|
+| Chat (fast) | `gemini-2.0-flash` | $0.10/1M | $0.40/1M |
+| Chat (lite) | `gemini-2.0-flash-lite` | $0.075/1M | $0.30/1M |
+| Chat (quality) | `gemini-2.5-pro` | $1.25/1M | $10.00/1M |
+| Flash exp | `gemini-2.5-flash` | $0.15/1M | $0.60/1M |
+| TTS | `gemini-2.5-pro-tts-preview` | - | ~$0.02/min |
+| Deep Research | `deep-research-pro-preview` | $0.50-2.00/query |
+
+### Typical Operation Costs
 
 | Operation | Typical Cost |
 |-----------|--------------|
 | Chat query (Flash) | $0.001 - $0.01 |
 | Chat query (Pro) | $0.02 - $0.10 |
-| Audio Overview (Deep Dive) | $0.40 - $0.80 |
-| Video Overview (48 sec, fast) | $4 - $6 |
+| Audio Overview (Deep Dive, 10 min) | $0.40 - $0.80 |
+| Video Overview (10 sec) | $0.20 - $0.40 |
 | Deep Research | $0.50 - $2.00 |
+| Flashcards (10 cards) | $0.01 - $0.02 |
 
 ---
 
-## Success Metrics
+## The Philosophy
 
-### Phase 1: Core Functionality
-- [ ] Document ingestion working (PDF, DOCX, TXT)
-- [ ] RAG chat with citations functional
-- [ ] Audio overview generation complete
-- [ ] All features exposed via API
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                                                                  │
+│   NotebookLM says:                                              │
+│   "Here's our product. Use it our way."                         │
+│                                                                  │
+│   NotebookLM Reimagined says:                                   │
+│   "Here's a platform. Build whatever you want."                 │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
+```
 
-### Phase 2: Parity
-- [ ] YouTube source ingestion
-- [ ] Website scraping
-- [ ] Video overview generation
-- [ ] Deep Research agent
-- [ ] Study material generation
-
-### Phase 3: Polish
-- [ ] Web UI complete
-- [ ] Webhook notifications
-- [ ] Usage analytics
+With Supabase handling all infrastructure and AI-assisted development via MCP, we focus entirely on features. No DevOps. No infrastructure. Just building.
 
 ---
 
-## Let's Build It
+## Next Steps
 
-The philosophy is simple:
+1. **Read `02_PROJECT_SPECIFICATION.md`** for complete technical details
+2. **Read `03_IMPLEMENTATION_GUIDE.md`** for step-by-step build instructions
+3. **Set up prerequisites** (Supabase, Vercel, Gemini API)
+4. **Start building** with Claude + Supabase MCP
 
-**NotebookLM says**: "Here's our product. Use it our way."
+---
 
-**NotebookLM Reimagined says**: "Here's a platform. Build whatever you want."
-
-With Supabase handling all infrastructure and the Supabase MCP enabling rapid AI-assisted development, we can focus entirely on features.
-
-Let's build the platform.
+**Ready to build the platform? Let's go.**

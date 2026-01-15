@@ -1,84 +1,85 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
-import { generateAudioScript, generateTTSAudio, pcmToWav, isGeminiConfigured } from '@/lib/gemini'
+import { createClient } from '@supabase/supabase-js';
+import { NextRequest, NextResponse } from 'next/server';
+
+import { generateAudioScript, generateTTSAudio, pcmToWav, isGeminiConfigured } from '@/lib/gemini';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
+);
 
 async function verifyAccess(request: NextRequest, notebookId: string) {
-  const authHeader = request.headers.get('authorization')
-  if (!authHeader) return null
+  const authHeader = request.headers.get('authorization');
+  if (!authHeader) return null;
 
-  const token = authHeader.replace('Bearer ', '')
-  const { data: { user } } = await supabase.auth.getUser(token)
+  const token = authHeader.replace('Bearer ', '');
+  const {
+    data: { user },
+  } = await supabase.auth.getUser(token);
 
-  if (!user) return null
+  if (!user) return null;
 
   const { data: notebook } = await supabase
     .from('notebooks')
     .select('id')
     .eq('id', notebookId)
     .eq('user_id', user.id)
-    .single()
+    .single();
 
-  if (!notebook) return null
+  if (!notebook) return null;
 
-  return user
+  return user;
 }
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { id: notebookId } = await params
-    const user = await verifyAccess(request, notebookId)
+    const { id: notebookId } = await params;
+    const user = await verifyAccess(request, notebookId);
 
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { data: audioOverviews } = await supabase
       .from('audio_overviews')
       .select('*')
       .eq('notebook_id', notebookId)
-      .order('created_at', { ascending: false })
+      .order('created_at', { ascending: false });
 
     // Map audio_file_path to audio_url for frontend compatibility
-    const mappedAudio = (audioOverviews || []).map(audio => ({
+    const mappedAudio = (audioOverviews || []).map((audio) => ({
       ...audio,
-      audio_url: audio.audio_file_path
-    }))
+      audio_url: audio.audio_file_path,
+    }));
 
-    return NextResponse.json({ data: mappedAudio })
+    return NextResponse.json({ data: mappedAudio });
   } catch (error) {
-    console.error('List audio error:', error)
-    return NextResponse.json({ error: 'Failed to list audio' }, { status: 500 })
+    console.error('List audio error:', error);
+    return NextResponse.json({ error: 'Failed to list audio' }, { status: 500 });
   }
 }
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { id: notebookId } = await params
-    const user = await verifyAccess(request, notebookId)
+    const { id: notebookId } = await params;
+    const user = await verifyAccess(request, notebookId);
 
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const body = await request.json()
-    const { format, source_ids, custom_instructions } = body
+    const body = await request.json();
+    const { format, source_ids, custom_instructions } = body;
 
     // Check if Gemini is configured
     if (!isGeminiConfigured()) {
-      return NextResponse.json({
-        error: 'Gemini API not configured. Please set GOOGLE_API_KEY in your environment variables.'
-      }, { status: 503 })
+      return NextResponse.json(
+        {
+          error:
+            'Gemini API not configured. Please set GOOGLE_API_KEY in your environment variables.',
+        },
+        { status: 503 }
+      );
     }
 
     // Get sources content
@@ -86,103 +87,106 @@ export async function POST(
       .from('sources')
       .select('*')
       .eq('notebook_id', notebookId)
-      .eq('status', 'ready')
+      .eq('status', 'ready');
 
     if (source_ids && source_ids.length > 0) {
-      query = query.in('id', source_ids)
+      query = query.in('id', source_ids);
     }
 
-    const { data: sources } = await query
+    const { data: sources } = await query;
 
     if (!sources || sources.length === 0) {
-      return NextResponse.json({ error: 'No sources available' }, { status: 400 })
+      return NextResponse.json({ error: 'No sources available' }, { status: 400 });
     }
 
     // Combine source content
-    const sourceContent = sources.map(s => {
-      const parts: string[] = []
-      parts.push(`## ${s.name}`)
+    const sourceContent = sources
+      .map((s) => {
+        const parts: string[] = [];
+        parts.push(`## ${s.name}`);
 
-      if (s.type === 'text' && s.metadata?.content) {
-        parts.push(s.metadata.content)
-      }
+        if (s.type === 'text' && s.metadata?.content) {
+          parts.push(s.metadata.content);
+        }
 
-      if (s.source_guide?.summary) {
-        parts.push(`Summary: ${s.source_guide.summary}`)
-      }
+        if (s.source_guide?.summary) {
+          parts.push(`Summary: ${s.source_guide.summary}`);
+        }
 
-      if (s.source_guide?.key_topics && s.source_guide.key_topics.length > 0) {
-        parts.push(`Key Topics: ${s.source_guide.key_topics.join(', ')}`)
-      }
+        if (s.source_guide?.key_topics && s.source_guide.key_topics.length > 0) {
+          parts.push(`Key Topics: ${s.source_guide.key_topics.join(', ')}`);
+        }
 
-      return parts.join('\n\n')
-    }).join('\n\n---\n\n')
+        return parts.join('\n\n');
+      })
+      .join('\n\n---\n\n');
 
     // Add custom instructions if provided
     const fullContent = custom_instructions
       ? `${sourceContent}\n\n[Additional Instructions: ${custom_instructions}]`
-      : sourceContent
+      : sourceContent;
 
     // Limit content to prevent token overflow
-    const truncatedContent = fullContent.slice(0, 100000)
+    const truncatedContent = fullContent.slice(0, 100000);
 
     // Generate real script using Gemini
-    const validFormat = (format as 'deep_dive' | 'brief' | 'critique' | 'debate') || 'deep_dive'
+    const validFormat = (format as 'deep_dive' | 'brief' | 'critique' | 'debate') || 'deep_dive';
 
     try {
       // Step 1: Generate the script
-      const script = await generateAudioScript(truncatedContent, validFormat)
+      const script = await generateAudioScript(truncatedContent, validFormat);
 
       // Step 2: Generate TTS audio from the script
-      let audioUrl: string | undefined
-      let durationSeconds = 0
+      let audioUrl: string | undefined;
+      let durationSeconds = 0;
 
       try {
         // For longer scripts, we may need to chunk them
         // TTS has limits on input length, so we'll use a portion for now
-        const scriptForTTS = script.slice(0, 3000) // Limit for TTS
-        console.log('[AUDIO] Starting TTS generation, script length:', scriptForTTS.length)
+        const scriptForTTS = script.slice(0, 3000); // Limit for TTS
+        console.log('[AUDIO] Starting TTS generation, script length:', scriptForTTS.length);
 
-        const { audioData, mimeType } = await generateTTSAudio(scriptForTTS)
-        console.log('[AUDIO] TTS success, audio data length:', audioData.length, 'mime:', mimeType)
+        const { audioData, mimeType } = await generateTTSAudio(scriptForTTS);
+        console.log('[AUDIO] TTS success, audio data length:', audioData.length, 'mime:', mimeType);
 
         // Convert PCM to WAV format for browser compatibility
-        const pcmBuffer = Buffer.from(audioData, 'base64')
-        const wavBuffer = pcmToWav(pcmBuffer)
-        console.log('[AUDIO] Converted to WAV, size:', wavBuffer.length, 'bytes')
+        const pcmBuffer = Buffer.from(audioData, 'base64');
+        const wavBuffer = pcmToWav(pcmBuffer);
+        console.log('[AUDIO] Converted to WAV, size:', wavBuffer.length, 'bytes');
 
         // Upload audio to Supabase Storage
-        const audioFileName = `audio_${notebookId}_${Date.now()}.wav`
+        const audioFileName = `audio_${notebookId}_${Date.now()}.wav`;
 
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from('audio')
           .upload(audioFileName, wavBuffer, {
             contentType: 'audio/wav',
-            upsert: true
-          })
+            upsert: true,
+          });
 
         if (uploadError) {
-          console.error('Audio upload error:', uploadError)
+          console.error('Audio upload error:', uploadError);
         } else {
           // Get public URL
-          const { data: urlData } = supabase.storage
-            .from('audio')
-            .getPublicUrl(audioFileName)
+          const { data: urlData } = supabase.storage.from('audio').getPublicUrl(audioFileName);
 
-          audioUrl = urlData.publicUrl
+          audioUrl = urlData.publicUrl;
 
           // Calculate actual duration from audio data
           // WAV: 16-bit mono at 24000Hz = 48000 bytes per second
-          const bytesPerSecond = 24000 * 2 * 1  // sampleRate * bytesPerSample * channels
-          durationSeconds = Math.round(pcmBuffer.length / bytesPerSecond)
-          console.log('[AUDIO] Audio duration:', durationSeconds, 'seconds')
+          const bytesPerSecond = 24000 * 2 * 1; // sampleRate * bytesPerSample * channels
+          durationSeconds = Math.round(pcmBuffer.length / bytesPerSecond);
+          console.log('[AUDIO] Audio duration:', durationSeconds, 'seconds');
         }
       } catch (ttsError) {
-        console.error('[AUDIO] TTS generation error (continuing with script only):', ttsError)
-        console.error('[AUDIO] Error details:', JSON.stringify(ttsError, Object.getOwnPropertyNames(ttsError)))
+        console.error('[AUDIO] TTS generation error (continuing with script only):', ttsError);
+        console.error(
+          '[AUDIO] Error details:',
+          JSON.stringify(ttsError, Object.getOwnPropertyNames(ttsError))
+        );
         // Continue without audio - we still have the script
-        const wordCount = script.split(/\s+/).length
-        durationSeconds = Math.round((wordCount / 150) * 60)
+        const wordCount = script.split(/\s+/).length;
+        durationSeconds = Math.round((wordCount / 150) * 60);
       }
 
       // Create audio record
@@ -194,7 +198,7 @@ export async function POST(
           status: 'completed',
           progress_percent: 100,
           custom_instructions,
-          source_ids: sources.map(s => s.id),
+          source_ids: sources.map((s) => s.id),
           script,
           audio_file_path: audioUrl,
           duration_seconds: durationSeconds,
@@ -203,23 +207,26 @@ export async function POST(
           completed_at: new Date().toISOString(),
         })
         .select()
-        .single()
+        .single();
 
       if (error) {
-        console.error('Database error:', error)
-        return NextResponse.json({ error: 'Failed to save audio overview' }, { status: 400 })
+        console.error('Database error:', error);
+        return NextResponse.json({ error: 'Failed to save audio overview' }, { status: 400 });
       }
 
       // Map audio_file_path to audio_url for frontend compatibility
-      return NextResponse.json({ data: { ...audio, audio_url: audio.audio_file_path } })
+      return NextResponse.json({ data: { ...audio, audio_url: audio.audio_file_path } });
     } catch (error) {
-      console.error('Script generation error:', error)
-      return NextResponse.json({
-        error: 'Failed to generate audio. Please try again.'
-      }, { status: 500 })
+      console.error('Script generation error:', error);
+      return NextResponse.json(
+        {
+          error: 'Failed to generate audio. Please try again.',
+        },
+        { status: 500 }
+      );
     }
   } catch (error) {
-    console.error('Create audio error:', error)
-    return NextResponse.json({ error: 'Failed to create audio' }, { status: 500 })
+    console.error('Create audio error:', error);
+    return NextResponse.json({ error: 'Failed to create audio' }, { status: 500 });
   }
 }

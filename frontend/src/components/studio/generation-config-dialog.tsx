@@ -1,6 +1,10 @@
-'use client'
+'use client';
 
-import { useState } from 'react'
+import { Loader2 } from 'lucide-react';
+import { useState } from 'react';
+
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Dialog,
   DialogContent,
@@ -8,21 +12,18 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
-import { Slider } from '@/components/ui/slider'
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
-import { Checkbox } from '@/components/ui/checkbox'
+} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
-import { Loader2 } from 'lucide-react'
+} from '@/components/ui/select';
+import { Slider } from '@/components/ui/slider';
+import { Textarea } from '@/components/ui/textarea';
 
 export type GenerationType =
   | 'flashcards'
@@ -33,62 +34,62 @@ export type GenerationType =
   | 'data_table'
   | 'report'
   | 'slide_deck'
-  | 'infographic'
+  | 'infographic';
 
 export interface GenerationConfig {
-  type: GenerationType
-  count?: number
-  difficulty?: 'basic' | 'intermediate' | 'advanced'
-  focusArea?: string
-  customInstructions?: string
-  questionTypes?: string[]
-  reportType?: 'briefing_doc' | 'summary' | 'blog_post' | 'analysis'
-  tone?: 'formal' | 'casual' | 'academic'
-  slideCount?: number
-  style?: string
-  sourceIds?: string[]
+  type: GenerationType;
+  count?: number;
+  difficulty?: 'basic' | 'intermediate' | 'advanced';
+  focusArea?: string;
+  customInstructions?: string;
+  questionTypes?: string[];
+  reportType?: 'briefing_doc' | 'summary' | 'blog_post' | 'analysis';
+  tone?: 'formal' | 'casual' | 'academic';
+  slideCount?: number;
+  style?: string;
+  sourceIds?: string[];
   // Infographic-specific
-  imageCount?: number
-  imageStyle?: string
+  imageCount?: number;
+  imageStyle?: string;
 }
 
 interface Source {
-  id: string
-  name: string
+  id: string;
+  name: string;
 }
 
 interface GenerationConfigDialogProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  type: GenerationType
-  sources?: Source[]
-  onGenerate: (config: GenerationConfig) => void
-  isGenerating?: boolean
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  type: GenerationType;
+  sources?: Source[];
+  onGenerate: (config: GenerationConfig) => void;
+  isGenerating?: boolean;
 }
 
 const typeLabels: Record<GenerationType, string> = {
-  'flashcards': 'Flashcards',
-  'quiz': 'Quiz',
+  flashcards: 'Flashcards',
+  quiz: 'Quiz',
   'study-guide': 'Study Guide',
-  'faq': 'FAQ',
+  faq: 'FAQ',
   'mind-map': 'Mind Map',
-  'data_table': 'Data Table',
-  'report': 'Report',
-  'slide_deck': 'Slide Deck',
-  'infographic': 'Infographic',
-}
+  data_table: 'Data Table',
+  report: 'Report',
+  slide_deck: 'Slide Deck',
+  infographic: 'Infographic',
+};
 
 const typeDescriptions: Record<GenerationType, string> = {
-  'flashcards': 'Generate flashcards for memorization and review',
-  'quiz': 'Create quiz questions to test understanding',
+  flashcards: 'Generate flashcards for memorization and review',
+  quiz: 'Create quiz questions to test understanding',
   'study-guide': 'Build a comprehensive study guide',
-  'faq': 'Generate frequently asked questions with answers',
+  faq: 'Generate frequently asked questions with answers',
   'mind-map': 'Create a visual mind map of concepts',
-  'data_table': 'Extract and organize data into tables',
-  'report': 'Generate a formatted document report',
-  'slide_deck': 'Create presentation slides',
-  'infographic': 'Design a visual infographic layout',
-}
+  data_table: 'Extract and organize data into tables',
+  report: 'Generate a formatted document report',
+  slide_deck: 'Create presentation slides',
+  infographic: 'Design a visual infographic layout',
+};
 
 export function GenerationConfigDialog({
   open,
@@ -112,25 +113,23 @@ export function GenerationConfigDialog({
     sourceIds: [],
     imageCount: 4,
     imageStyle: 'infographic',
-  })
+  });
 
-  const [selectedSources, setSelectedSources] = useState<string[]>([])
+  const [selectedSources, setSelectedSources] = useState<string[]>([]);
 
   const handleGenerate = () => {
     onGenerate({
       ...config,
       type,
       sourceIds: selectedSources.length > 0 ? selectedSources : undefined,
-    })
-  }
+    });
+  };
 
   const toggleSource = (sourceId: string) => {
-    setSelectedSources(prev =>
-      prev.includes(sourceId)
-        ? prev.filter(id => id !== sourceId)
-        : [...prev, sourceId]
-    )
-  }
+    setSelectedSources((prev) =>
+      prev.includes(sourceId) ? prev.filter((id) => id !== sourceId) : [...prev, sourceId]
+    );
+  };
 
   const renderStudyOptions = () => (
     <>
@@ -139,11 +138,11 @@ export function GenerationConfigDialog({
         <div className="space-y-3">
           <div className="flex justify-between">
             <Label>Number of items</Label>
-            <span className="text-sm text-muted-foreground">{config.count}</span>
+            <span className="text-muted-foreground text-sm">{config.count}</span>
           </div>
           <Slider
             value={[config.count || 5]}
-            onValueChange={([value]) => setConfig(prev => ({ ...prev, count: value }))}
+            onValueChange={([value]) => setConfig((prev) => ({ ...prev, count: value }))}
             min={3}
             max={type === 'flashcards' ? 25 : type === 'faq' ? 15 : 10}
             step={1}
@@ -157,20 +156,28 @@ export function GenerationConfigDialog({
         <Label>Difficulty Level</Label>
         <RadioGroup
           value={config.difficulty}
-          onValueChange={(value) => setConfig(prev => ({ ...prev, difficulty: value as GenerationConfig['difficulty'] }))}
+          onValueChange={(value) =>
+            setConfig((prev) => ({ ...prev, difficulty: value as GenerationConfig['difficulty'] }))
+          }
           className="flex gap-4"
         >
           <div className="flex items-center space-x-2">
             <RadioGroupItem value="basic" id="basic" />
-            <Label htmlFor="basic" className="font-normal cursor-pointer">Basic</Label>
+            <Label htmlFor="basic" className="cursor-pointer font-normal">
+              Basic
+            </Label>
           </div>
           <div className="flex items-center space-x-2">
             <RadioGroupItem value="intermediate" id="intermediate" />
-            <Label htmlFor="intermediate" className="font-normal cursor-pointer">Intermediate</Label>
+            <Label htmlFor="intermediate" className="cursor-pointer font-normal">
+              Intermediate
+            </Label>
           </div>
           <div className="flex items-center space-x-2">
             <RadioGroupItem value="advanced" id="advanced" />
-            <Label htmlFor="advanced" className="font-normal cursor-pointer">Advanced</Label>
+            <Label htmlFor="advanced" className="cursor-pointer font-normal">
+              Advanced
+            </Label>
           </div>
         </RadioGroup>
       </div>
@@ -184,28 +191,30 @@ export function GenerationConfigDialog({
               { id: 'multiple_choice', label: 'Multiple Choice' },
               { id: 'true_false', label: 'True/False' },
               { id: 'short_answer', label: 'Short Answer' },
-            ].map(qType => (
+            ].map((qType) => (
               <div key={qType.id} className="flex items-center space-x-2">
                 <Checkbox
                   id={qType.id}
                   checked={config.questionTypes?.includes(qType.id)}
                   onCheckedChange={(checked) => {
-                    setConfig(prev => ({
+                    setConfig((prev) => ({
                       ...prev,
                       questionTypes: checked
                         ? [...(prev.questionTypes || []), qType.id]
-                        : prev.questionTypes?.filter(t => t !== qType.id)
-                    }))
+                        : prev.questionTypes?.filter((t) => t !== qType.id),
+                    }));
                   }}
                 />
-                <Label htmlFor={qType.id} className="font-normal cursor-pointer">{qType.label}</Label>
+                <Label htmlFor={qType.id} className="cursor-pointer font-normal">
+                  {qType.label}
+                </Label>
               </div>
             ))}
           </div>
         </div>
       )}
     </>
-  )
+  );
 
   const renderCreativeOptions = () => (
     <>
@@ -215,7 +224,12 @@ export function GenerationConfigDialog({
           <Label>Report Type</Label>
           <Select
             value={config.reportType}
-            onValueChange={(value) => setConfig(prev => ({ ...prev, reportType: value as GenerationConfig['reportType'] }))}
+            onValueChange={(value) =>
+              setConfig((prev) => ({
+                ...prev,
+                reportType: value as GenerationConfig['reportType'],
+              }))
+            }
           >
             <SelectTrigger>
               <SelectValue />
@@ -235,11 +249,11 @@ export function GenerationConfigDialog({
         <div className="space-y-3">
           <div className="flex justify-between">
             <Label>Number of slides</Label>
-            <span className="text-sm text-muted-foreground">{config.slideCount}</span>
+            <span className="text-muted-foreground text-sm">{config.slideCount}</span>
           </div>
           <Slider
             value={[config.slideCount || 8]}
-            onValueChange={([value]) => setConfig(prev => ({ ...prev, slideCount: value }))}
+            onValueChange={([value]) => setConfig((prev) => ({ ...prev, slideCount: value }))}
             min={4}
             max={20}
             step={1}
@@ -254,20 +268,28 @@ export function GenerationConfigDialog({
           <Label>Tone</Label>
           <RadioGroup
             value={config.tone}
-            onValueChange={(value) => setConfig(prev => ({ ...prev, tone: value as GenerationConfig['tone'] }))}
+            onValueChange={(value) =>
+              setConfig((prev) => ({ ...prev, tone: value as GenerationConfig['tone'] }))
+            }
             className="flex gap-4"
           >
             <div className="flex items-center space-x-2">
               <RadioGroupItem value="formal" id="formal" />
-              <Label htmlFor="formal" className="font-normal cursor-pointer">Formal</Label>
+              <Label htmlFor="formal" className="cursor-pointer font-normal">
+                Formal
+              </Label>
             </div>
             <div className="flex items-center space-x-2">
               <RadioGroupItem value="casual" id="casual" />
-              <Label htmlFor="casual" className="font-normal cursor-pointer">Casual</Label>
+              <Label htmlFor="casual" className="cursor-pointer font-normal">
+                Casual
+              </Label>
             </div>
             <div className="flex items-center space-x-2">
               <RadioGroupItem value="academic" id="academic" />
-              <Label htmlFor="academic" className="font-normal cursor-pointer">Academic</Label>
+              <Label htmlFor="academic" className="cursor-pointer font-normal">
+                Academic
+              </Label>
             </div>
           </RadioGroup>
         </div>
@@ -280,17 +302,17 @@ export function GenerationConfigDialog({
           <div className="space-y-3">
             <div className="flex justify-between">
               <Label>Number of images</Label>
-              <span className="text-sm text-muted-foreground">{config.imageCount}</span>
+              <span className="text-muted-foreground text-sm">{config.imageCount}</span>
             </div>
             <Slider
               value={[config.imageCount || 4]}
-              onValueChange={([value]) => setConfig(prev => ({ ...prev, imageCount: value }))}
+              onValueChange={([value]) => setConfig((prev) => ({ ...prev, imageCount: value }))}
               min={1}
               max={8}
               step={1}
               className="w-full"
             />
-            <p className="text-xs text-muted-foreground">
+            <p className="text-muted-foreground text-xs">
               Each image visualizes a key concept from your sources
             </p>
           </div>
@@ -300,7 +322,7 @@ export function GenerationConfigDialog({
             <Label>Image Style</Label>
             <Select
               value={config.imageStyle}
-              onValueChange={(value) => setConfig(prev => ({ ...prev, imageStyle: value }))}
+              onValueChange={(value) => setConfig((prev) => ({ ...prev, imageStyle: value }))}
             >
               <SelectTrigger>
                 <SelectValue />
@@ -320,7 +342,7 @@ export function GenerationConfigDialog({
             <Label>Color Theme</Label>
             <Select
               value={config.style}
-              onValueChange={(value) => setConfig(prev => ({ ...prev, style: value }))}
+              onValueChange={(value) => setConfig((prev) => ({ ...prev, style: value }))}
             >
               <SelectTrigger>
                 <SelectValue />
@@ -337,18 +359,16 @@ export function GenerationConfigDialog({
         </>
       )}
     </>
-  )
+  );
 
-  const isStudyType = ['flashcards', 'quiz', 'study-guide', 'faq', 'mind-map'].includes(type)
+  const isStudyType = ['flashcards', 'quiz', 'study-guide', 'faq', 'mind-map'].includes(type);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px] max-h-[85vh] overflow-y-auto">
+      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Generate {typeLabels[type]}</DialogTitle>
-          <DialogDescription>
-            {typeDescriptions[type]}
-          </DialogDescription>
+          <DialogDescription>{typeDescriptions[type]}</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6 py-4">
@@ -357,24 +377,30 @@ export function GenerationConfigDialog({
 
           {/* Focus area - for all types */}
           <div className="space-y-3">
-            <Label htmlFor="focus">Focus Area <span className="text-muted-foreground">(optional)</span></Label>
+            <Label htmlFor="focus">
+              Focus Area <span className="text-muted-foreground">(optional)</span>
+            </Label>
             <Textarea
               id="focus"
               placeholder="e.g. 'Focus on key definitions' or 'Emphasize practical examples'"
               value={config.focusArea}
-              onChange={(e) => setConfig(prev => ({ ...prev, focusArea: e.target.value }))}
+              onChange={(e) => setConfig((prev) => ({ ...prev, focusArea: e.target.value }))}
               className="h-20 resize-none"
             />
           </div>
 
           {/* Custom instructions - for all types */}
           <div className="space-y-3">
-            <Label htmlFor="instructions">Custom Instructions <span className="text-muted-foreground">(optional)</span></Label>
+            <Label htmlFor="instructions">
+              Custom Instructions <span className="text-muted-foreground">(optional)</span>
+            </Label>
             <Textarea
               id="instructions"
               placeholder="Any specific requirements or preferences..."
               value={config.customInstructions}
-              onChange={(e) => setConfig(prev => ({ ...prev, customInstructions: e.target.value }))}
+              onChange={(e) =>
+                setConfig((prev) => ({ ...prev, customInstructions: e.target.value }))
+              }
               className="h-20 resize-none"
             />
           </div>
@@ -383,13 +409,13 @@ export function GenerationConfigDialog({
           {sources.length > 0 && (
             <div className="space-y-3">
               <Label>Sources</Label>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-muted-foreground text-sm">
                 {selectedSources.length === 0
                   ? 'Using all sources. Select specific sources to focus on:'
                   : `Using ${selectedSources.length} of ${sources.length} sources`}
               </p>
-              <div className="max-h-32 overflow-y-auto space-y-2 border rounded-md p-3">
-                {sources.map(source => (
+              <div className="max-h-32 space-y-2 overflow-y-auto rounded-md border p-3">
+                {sources.map((source) => (
                   <div key={source.id} className="flex items-center space-x-2">
                     <Checkbox
                       id={source.id}
@@ -398,7 +424,7 @@ export function GenerationConfigDialog({
                     />
                     <Label
                       htmlFor={source.id}
-                      className="font-normal cursor-pointer text-sm truncate"
+                      className="cursor-pointer truncate text-sm font-normal"
                     >
                       {source.name}
                     </Label>
@@ -426,5 +452,5 @@ export function GenerationConfigDialog({
         </DialogFooter>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

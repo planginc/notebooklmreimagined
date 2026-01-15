@@ -398,13 +398,14 @@ NEXT_PUBLIC_API_URL=https://your-api.vercel.app
 
 | Layer | Technology |
 |-------|------------|
-| **Frontend** | Next.js 14, React 18, TypeScript, Tailwind, shadcn/ui |
+| **Frontend** | Next.js 16, React 19, TypeScript, Tailwind v4, shadcn/ui |
 | **Backend** | FastAPI, Python 3.11+, Pydantic |
 | **Database** | Supabase PostgreSQL + Row Level Security |
 | **Auth** | Supabase Auth (JWT) + Custom API Keys |
 | **Storage** | Supabase Storage |
 | **AI** | Gemini 2.5 Flash/Pro, Gemini TTS, Veo |
 | **Deployment** | Vercel (Serverless) |
+| **DX** | Prettier, ESLint, Husky, lint-staged |
 
 ---
 
@@ -439,12 +440,63 @@ NEXT_PUBLIC_API_URL=https://your-api.vercel.app
 - [x] AI personas
 - [x] **API deployment (Vercel)**
 - [x] **n8n / Zapier ready**
+- [x] **DX improvements** (Prettier, ESLint, Husky, HTTP caching)
 - [ ] Streaming responses
 - [ ] Collaborative notebooks
 - [ ] Webhooks
 - [ ] Local LLM support (Ollama)
 - [ ] Browser extension
 - [ ] Mobile apps
+
+---
+
+## Contributing
+
+### Development Setup
+
+```bash
+# Clone and install
+git clone https://github.com/earlyaidopters/notebooklmreimagined.git
+cd notebooklmreimagined/frontend
+npm install
+
+# Available scripts
+npm run dev           # Start development server
+npm run build         # Production build
+npm run lint          # Check for linting issues
+npm run lint:fix      # Auto-fix linting issues
+npm run format        # Format code with Prettier
+npm run format:check  # Check formatting
+npm run type-check    # TypeScript type checking
+npm run analyze       # Bundle size analysis
+```
+
+### Code Quality
+
+Pre-commit hooks automatically run on staged files:
+- **ESLint** — Catches bugs, enforces best practices
+- **Prettier** — Consistent code formatting
+- **TypeScript** — Type safety
+
+### Project Structure
+
+```
+frontend/
+├── src/
+│   ├── app/           # Next.js App Router pages
+│   ├── components/    # React components
+│   └── lib/           # Utilities, hooks, types
+├── .prettierrc        # Prettier config
+├── eslint.config.mjs  # ESLint config
+└── next.config.ts     # Next.js config (security headers, caching)
+
+backend/
+├── app/
+│   ├── routers/       # API endpoints
+│   ├── services/      # Business logic
+│   └── models/        # Pydantic schemas
+└── requirements.txt
+```
 
 ---
 

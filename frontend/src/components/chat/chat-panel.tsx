@@ -1,7 +1,6 @@
-'use client'
+'use client';
 
-import { useRef, useEffect, useState, useCallback } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Send,
   Loader2,
@@ -21,53 +20,54 @@ import {
   PanelLeft,
   Pencil,
   Check,
-  X
-} from 'lucide-react'
-import { createClient } from '@/lib/supabase'
-import { Button } from '@/components/ui/button'
-import { Textarea } from '@/components/ui/textarea'
-import { Input } from '@/components/ui/input'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+  X,
+} from 'lucide-react';
+import { useRef, useEffect, useState, useCallback } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import { toast } from 'sonner';
+
+import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import { ChatMessage, Citation } from '@/lib/supabase'
-import { toast } from 'sonner'
-import ReactMarkdown from 'react-markdown'
-import remarkGfm from 'remark-gfm'
+} from '@/components/ui/dropdown-menu';
+import { Input } from '@/components/ui/input';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Textarea } from '@/components/ui/textarea';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { createClient , ChatMessage, Citation } from '@/lib/supabase';
 
 interface ChatSession {
-  id: string
-  title: string
-  created_at: string
-  updated_at: string
-  message_count: number
+  id: string;
+  title: string;
+  created_at: string;
+  updated_at: string;
+  message_count: number;
 }
 
 interface ChatPanelProps {
-  messages: ChatMessage[]
-  message: string
-  onMessageChange: (message: string) => void
-  onSendMessage: (overrideMessage?: string) => void
-  sending: boolean
-  selectedSourcesCount: number
-  totalSourcesCount: number
-  notebookSummary?: string
-  onSaveResponse?: (message: ChatMessage) => void
+  messages: ChatMessage[];
+  message: string;
+  onMessageChange: (message: string) => void;
+  onSendMessage: (overrideMessage?: string) => void;
+  sending: boolean;
+  selectedSourcesCount: number;
+  totalSourcesCount: number;
+  notebookSummary?: string;
+  onSaveResponse?: (message: ChatMessage) => void;
   // Chat history props
-  sessions?: ChatSession[]
-  currentSessionId?: string | null
-  onLoadSession?: (sessionId: string) => void
-  onNewChat?: () => void
-  onDeleteSession?: (sessionId: string) => void
-  onRenameSession?: (sessionId: string, newTitle: string) => void
-  loadingSessions?: boolean
-  notebookId?: string
+  sessions?: ChatSession[];
+  currentSessionId?: string | null;
+  onLoadSession?: (sessionId: string) => void;
+  onNewChat?: () => void;
+  onDeleteSession?: (sessionId: string) => void;
+  onRenameSession?: (sessionId: string, newTitle: string) => void;
+  loadingSessions?: boolean;
+  notebookId?: string;
 }
 
 const SUGGESTED_QUESTIONS = [
@@ -75,7 +75,7 @@ const SUGGESTED_QUESTIONS = [
   'What are the main takeaways?',
   'Explain the methodology',
   'What are the limitations?',
-]
+];
 
 export function ChatPanel({
   messages,
@@ -96,139 +96,137 @@ export function ChatPanel({
   loadingSessions,
   notebookId,
 }: ChatPanelProps) {
-  const messagesEndRef = useRef<HTMLDivElement>(null)
-  const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Sidebar state
-  const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [searchQuery, setSearchQuery] = useState('')
-  const [editingSessionId, setEditingSessionId] = useState<string | null>(null)
-  const [editingTitle, setEditingTitle] = useState('')
-  const editInputRef = useRef<HTMLInputElement>(null)
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
+  const [editingTitle, setEditingTitle] = useState('');
+  const editInputRef = useRef<HTMLInputElement>(null);
 
   // Get current session title
-  const currentSession = sessions.find(s => s.id === currentSessionId)
-  const currentTitle = currentSession?.title || 'New Chat'
+  const currentSession = sessions.find((s) => s.id === currentSessionId);
+  const currentTitle = currentSession?.title || 'New Chat';
 
   // Filter sessions based on search query
-  const filteredSessions = sessions.filter(session =>
+  const filteredSessions = sessions.filter((session) =>
     session.title.toLowerCase().includes(searchQuery.toLowerCase())
-  )
+  );
 
   // Format date for display
   const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr)
-    const now = new Date()
-    const diffMs = now.getTime() - date.getTime()
-    const diffMins = Math.floor(diffMs / 60000)
-    const diffHours = Math.floor(diffMins / 60)
-    const diffDays = Math.floor(diffHours / 24)
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMins / 60);
+    const diffDays = Math.floor(diffHours / 24);
 
-    if (diffMins < 1) return 'Just now'
-    if (diffMins < 60) return `${diffMins}m ago`
-    if (diffHours < 24) return `${diffHours}h ago`
-    if (diffDays < 7) return `${diffDays}d ago`
-    return date.toLocaleDateString()
-  }
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays < 7) return `${diffDays}d ago`;
+    return date.toLocaleDateString();
+  };
 
   // Format short timestamp for duplicate differentiation
   const formatShortTimestamp = (dateStr: string) => {
-    const date = new Date(dateStr)
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-  }
+    const date = new Date(dateStr);
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
 
   // Get display title with timestamp suffix for duplicates
   const getDisplayTitle = (session: ChatSession, allSessions: ChatSession[]) => {
-    const duplicates = allSessions.filter(s => s.title === session.title)
+    const duplicates = allSessions.filter((s) => s.title === session.title);
     if (duplicates.length > 1) {
-      return `${session.title} (${formatShortTimestamp(session.created_at)})`
+      return `${session.title} (${formatShortTimestamp(session.created_at)})`;
     }
-    return session.title
-  }
+    return session.title;
+  };
 
   // Get first message preview
   const getMessagePreview = (session: ChatSession) => {
     // We could fetch the first message, but for now just use the title
-    return session.title
-  }
+    return session.title;
+  };
 
   // Handle rename
   const handleStartRename = (session: ChatSession, e?: React.MouseEvent) => {
-    e?.stopPropagation()
-    setEditingSessionId(session.id)
-    setEditingTitle(session.title)
-    setTimeout(() => editInputRef.current?.focus(), 50)
-  }
+    e?.stopPropagation();
+    setEditingSessionId(session.id);
+    setEditingTitle(session.title);
+    setTimeout(() => editInputRef.current?.focus(), 50);
+  };
 
   const handleSaveRename = async () => {
     if (!editingSessionId || !editingTitle.trim()) {
-      setEditingSessionId(null)
-      return
+      setEditingSessionId(null);
+      return;
     }
 
     if (onRenameSession) {
-      onRenameSession(editingSessionId, editingTitle.trim())
+      onRenameSession(editingSessionId, editingTitle.trim());
     }
-    setEditingSessionId(null)
-  }
+    setEditingSessionId(null);
+  };
 
   const handleCancelRename = () => {
-    setEditingSessionId(null)
-    setEditingTitle('')
-  }
+    setEditingSessionId(null);
+    setEditingTitle('');
+  };
 
   const handleRenameKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
-      e.preventDefault()
-      handleSaveRename()
+      e.preventDefault();
+      handleSaveRename();
     } else if (e.key === 'Escape') {
-      handleCancelRename()
+      handleCancelRename();
     }
-  }
+  };
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages])
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      onSendMessage()
+      e.preventDefault();
+      onSendMessage();
     }
-  }
+  };
 
   const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text)
-    toast.success('Copied to clipboard')
-  }
+    navigator.clipboard.writeText(text);
+    toast.success('Copied to clipboard');
+  };
 
   // Sidebar Thread Item Component
   const ThreadItem = ({ session, isActive }: { session: ChatSession; isActive: boolean }) => {
-    const isEditing = editingSessionId === session.id
+    const isEditing = editingSessionId === session.id;
 
     return (
       <div
-        className={`
-          group relative flex items-start gap-3 p-3 rounded-xl cursor-pointer transition-all
-          ${isActive
-            ? 'bg-[var(--accent-primary)]/15 border border-[var(--accent-primary)]/30'
-            : 'hover:bg-[var(--bg-tertiary)] border border-transparent'
-          }
-        `}
+        className={`group relative flex cursor-pointer items-start gap-3 rounded-xl p-3 transition-all ${
+          isActive
+            ? 'border border-[var(--accent-primary)]/30 bg-[var(--accent-primary)]/15'
+            : 'border border-transparent hover:bg-[var(--bg-tertiary)]'
+        } `}
         onClick={() => !isEditing && onLoadSession?.(session.id)}
         onDoubleClick={() => handleStartRename(session)}
       >
-        <div className={`
-          w-8 h-8 rounded-lg flex items-center justify-center shrink-0
-          ${isActive
-            ? 'bg-[var(--accent-primary)]/20 text-[var(--accent-primary)]'
-            : 'bg-[var(--bg-secondary)] text-[var(--text-tertiary)]'
-          }
-        `}>
+        <div
+          className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${
+            isActive
+              ? 'bg-[var(--accent-primary)]/20 text-[var(--accent-primary)]'
+              : 'bg-[var(--bg-secondary)] text-[var(--text-tertiary)]'
+          } `}
+        >
           <MessageSquare className="h-4 w-4" />
         </div>
 
-        <div className="flex-1 min-w-0 py-0.5">
+        <div className="min-w-0 flex-1 py-0.5">
           {isEditing ? (
             <div className="flex items-center gap-1">
               <Input
@@ -237,14 +235,17 @@ export function ChatPanel({
                 onChange={(e) => setEditingTitle(e.target.value)}
                 onKeyDown={handleRenameKeyDown}
                 onBlur={handleSaveRename}
-                className="h-6 text-sm px-2 py-1 bg-[var(--bg-secondary)] border-[var(--accent-primary)]"
+                className="h-6 border-[var(--accent-primary)] bg-[var(--bg-secondary)] px-2 py-1 text-sm"
                 onClick={(e) => e.stopPropagation()}
               />
               <Button
                 variant="ghost"
                 size="icon"
                 className="h-6 w-6 shrink-0"
-                onClick={(e) => { e.stopPropagation(); handleSaveRename() }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleSaveRename();
+                }}
               >
                 <Check className="h-3 w-3 text-green-400" />
               </Button>
@@ -252,17 +253,22 @@ export function ChatPanel({
                 variant="ghost"
                 size="icon"
                 className="h-6 w-6 shrink-0"
-                onClick={(e) => { e.stopPropagation(); handleCancelRename() }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleCancelRename();
+                }}
               >
                 <X className="h-3 w-3 text-red-400" />
               </Button>
             </div>
           ) : (
             <>
-              <p className={`text-sm font-medium truncate ${isActive ? 'text-[var(--text-primary)]' : 'text-[var(--text-secondary)]'}`}>
+              <p
+                className={`truncate text-sm font-medium ${isActive ? 'text-[var(--text-primary)]' : 'text-[var(--text-secondary)]'}`}
+              >
                 {getDisplayTitle(session, sessions)}
               </p>
-              <div className="flex items-center gap-2 mt-1">
+              <div className="mt-1 flex items-center gap-2">
                 <Clock className="h-3 w-3 text-[var(--text-tertiary)]" />
                 <span className="text-xs text-[var(--text-tertiary)]">
                   {formatDate(session.updated_at)}
@@ -278,13 +284,13 @@ export function ChatPanel({
 
         {/* Action buttons */}
         {!isEditing && (
-          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-7 w-7 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)]"
+                  className="h-7 w-7 text-[var(--text-tertiary)] hover:bg-[var(--bg-secondary)] hover:text-[var(--text-primary)]"
                   onClick={(e) => handleStartRename(session, e)}
                 >
                   <Pencil className="h-3.5 w-3.5" />
@@ -299,10 +305,10 @@ export function ChatPanel({
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-7 w-7 text-[var(--text-tertiary)] hover:text-red-400 hover:bg-red-500/10"
+                    className="h-7 w-7 text-[var(--text-tertiary)] hover:bg-red-500/10 hover:text-red-400"
                     onClick={(e) => {
-                      e.stopPropagation()
-                      onDeleteSession(session.id)
+                      e.stopPropagation();
+                      onDeleteSession(session.id);
                     }}
                   >
                     <Trash2 className="h-3.5 w-3.5" />
@@ -316,11 +322,11 @@ export function ChatPanel({
 
         {/* Active indicator */}
         {isActive && (
-          <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-[var(--accent-primary)] rounded-r-full" />
+          <div className="absolute top-1/2 left-0 h-8 w-1 -translate-y-1/2 rounded-r-full bg-[var(--accent-primary)]" />
         )}
       </div>
-    )
-  }
+    );
+  };
 
   return (
     <div className="flex h-full overflow-hidden">
@@ -332,12 +338,12 @@ export function ChatPanel({
             animate={{ width: 280, opacity: 1 }}
             exit={{ width: 0, opacity: 0 }}
             transition={{ duration: 0.2, ease: 'easeInOut' }}
-            className="h-full border-r border-[rgba(255,255,255,0.1)] bg-[var(--bg-primary)] overflow-hidden shrink-0"
+            className="h-full shrink-0 overflow-hidden border-r border-[rgba(255,255,255,0.1)] bg-[var(--bg-primary)]"
           >
-            <div className="flex flex-col h-full w-[280px]">
+            <div className="flex h-full w-[280px] flex-col">
               {/* Sidebar Header */}
-              <div className="p-4 border-b border-[rgba(255,255,255,0.1)]">
-                <div className="flex items-center justify-between mb-3">
+              <div className="border-b border-[rgba(255,255,255,0.1)] p-4">
+                <div className="mb-3 flex items-center justify-between">
                   <h3 className="text-sm font-semibold text-[var(--text-primary)]">Chat History</h3>
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -356,12 +362,12 @@ export function ChatPanel({
 
                 {/* Search */}
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
+                  <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]" />
                   <Input
                     placeholder="Search threads..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-9 h-9 text-sm bg-[var(--bg-secondary)] border-[rgba(255,255,255,0.1)] placeholder:text-[var(--text-tertiary)]"
+                    className="h-9 border-[rgba(255,255,255,0.1)] bg-[var(--bg-secondary)] pl-9 text-sm placeholder:text-[var(--text-tertiary)]"
                   />
                 </div>
               </div>
@@ -371,7 +377,7 @@ export function ChatPanel({
                 <div className="p-3">
                   <Button
                     variant="outline"
-                    className="w-full justify-start gap-2 h-10 bg-[var(--bg-secondary)] border-[rgba(255,255,255,0.1)] hover:bg-[var(--bg-tertiary)] hover:border-[var(--accent-primary)]/50"
+                    className="h-10 w-full justify-start gap-2 border-[rgba(255,255,255,0.1)] bg-[var(--bg-secondary)] hover:border-[var(--accent-primary)]/50 hover:bg-[var(--bg-tertiary)]"
                     onClick={onNewChat}
                   >
                     <Plus className="h-4 w-4 text-[var(--accent-primary)]" />
@@ -397,13 +403,13 @@ export function ChatPanel({
                     ))}
                   </div>
                 ) : searchQuery ? (
-                  <div className="text-center py-8">
-                    <Search className="h-8 w-8 mx-auto mb-2 text-[var(--text-tertiary)]" />
+                  <div className="py-8 text-center">
+                    <Search className="mx-auto mb-2 h-8 w-8 text-[var(--text-tertiary)]" />
                     <p className="text-sm text-[var(--text-tertiary)]">No threads found</p>
                   </div>
                 ) : (
-                  <div className="text-center py-8">
-                    <MessageSquare className="h-8 w-8 mx-auto mb-2 text-[var(--text-tertiary)]" />
+                  <div className="py-8 text-center">
+                    <MessageSquare className="mx-auto mb-2 h-8 w-8 text-[var(--text-tertiary)]" />
                     <p className="text-sm text-[var(--text-tertiary)]">No conversations yet</p>
                   </div>
                 )}
@@ -414,9 +420,9 @@ export function ChatPanel({
       </AnimatePresence>
 
       {/* Main Chat Area */}
-      <div className="flex flex-col flex-1 h-full overflow-hidden">
+      <div className="flex h-full flex-1 flex-col overflow-hidden">
         {/* Chat History Header */}
-        <div className="h-12 px-4 flex items-center justify-between border-b border-[rgba(255,255,255,0.1)] bg-[var(--bg-primary)] shrink-0">
+        <div className="flex h-12 shrink-0 items-center justify-between border-b border-[rgba(255,255,255,0.1)] bg-[var(--bg-primary)] px-4">
           <div className="flex items-center gap-2">
             {/* Sidebar Toggle */}
             <Tooltip>
@@ -424,7 +430,7 @@ export function ChatPanel({
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-8 w-8 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)]"
+                  className="h-8 w-8 text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] hover:text-[var(--text-primary)]"
                   onClick={() => setSidebarOpen(!sidebarOpen)}
                 >
                   <PanelLeft className="h-4 w-4" />
@@ -442,28 +448,30 @@ export function ChatPanel({
                     className="h-8 gap-2 px-3 text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--bg-secondary)]"
                   >
                     <MessageSquare className="h-4 w-4 text-[var(--accent-primary)]" />
-                    <span className="truncate max-w-[200px]">{currentTitle}</span>
+                    <span className="max-w-[200px] truncate">{currentTitle}</span>
                     <ChevronDown className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
                   align="start"
-                  className="w-72 bg-[#1a1a2e] border-[rgba(255,255,255,0.15)] shadow-xl"
+                  className="w-72 border-[rgba(255,255,255,0.15)] bg-[#1a1a2e] shadow-xl"
                 >
                   {onNewChat && (
                     <>
                       <DropdownMenuItem
-                        className="gap-2 cursor-pointer focus:bg-[var(--bg-tertiary)]"
+                        className="cursor-pointer gap-2 focus:bg-[var(--bg-tertiary)]"
                         onClick={onNewChat}
                       >
                         <Plus className="h-4 w-4 text-[var(--accent-primary)]" />
                         <span>New Chat</span>
                       </DropdownMenuItem>
-                      {sessions.length > 0 && <DropdownMenuSeparator className="bg-[rgba(255,255,255,0.1)]" />}
+                      {sessions.length > 0 && (
+                        <DropdownMenuSeparator className="bg-[rgba(255,255,255,0.1)]" />
+                      )}
                     </>
                   )}
                   {loadingSessions ? (
-                    <div className="px-2 py-4 flex items-center justify-center">
+                    <div className="flex items-center justify-center px-2 py-4">
                       <Loader2 className="h-4 w-4 animate-spin text-[var(--text-tertiary)]" />
                     </div>
                   ) : sessions.length > 0 ? (
@@ -471,17 +479,19 @@ export function ChatPanel({
                       {sessions.map((session) => (
                         <DropdownMenuItem
                           key={session.id}
-                          className={`gap-2 cursor-pointer group focus:bg-[var(--bg-tertiary)] ${
+                          className={`group cursor-pointer gap-2 focus:bg-[var(--bg-tertiary)] ${
                             session.id === currentSessionId ? 'bg-[var(--accent-primary)]/10' : ''
                           }`}
                           onClick={() => onLoadSession?.(session.id)}
                         >
-                          <div className="flex-1 min-w-0">
+                          <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-2">
-                              <MessageSquare className="h-3.5 w-3.5 text-[var(--text-tertiary)] shrink-0" />
-                              <span className="truncate text-sm">{getDisplayTitle(session, sessions)}</span>
+                              <MessageSquare className="h-3.5 w-3.5 shrink-0 text-[var(--text-tertiary)]" />
+                              <span className="truncate text-sm">
+                                {getDisplayTitle(session, sessions)}
+                              </span>
                             </div>
-                            <div className="flex items-center gap-2 mt-0.5">
+                            <div className="mt-0.5 flex items-center gap-2">
                               <Clock className="h-3 w-3 text-[var(--text-tertiary)]" />
                               <span className="text-xs text-[var(--text-tertiary)]">
                                 {formatDate(session.updated_at)} · {session.message_count} messages
@@ -494,8 +504,8 @@ export function ChatPanel({
                               size="icon"
                               className="h-6 w-6 opacity-0 group-hover:opacity-100 hover:bg-red-500/20 hover:text-red-400"
                               onClick={(e) => {
-                                e.stopPropagation()
-                                onDeleteSession(session.id)
+                                e.stopPropagation();
+                                onDeleteSession(session.id);
                               }}
                             >
                               <Trash2 className="h-3.5 w-3.5" />
@@ -520,7 +530,7 @@ export function ChatPanel({
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-8 w-8 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)]"
+                  className="h-8 w-8 text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] hover:text-[var(--text-primary)]"
                   onClick={onNewChat}
                 >
                   <Plus className="h-4 w-4" />
@@ -533,34 +543,34 @@ export function ChatPanel({
 
         {/* Messages Area */}
         <div className="flex-1 overflow-y-auto">
-          <div className="max-w-3xl mx-auto px-6 py-6">
+          <div className="mx-auto max-w-3xl px-6 py-6">
             {messages.length === 0 ? (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="flex flex-col items-center justify-center min-h-[400px] text-center"
+                className="flex min-h-[400px] flex-col items-center justify-center text-center"
               >
                 {/* Hero Icon */}
-                <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[var(--accent-primary)]/20 to-[var(--accent-secondary)]/20 flex items-center justify-center mb-6">
+                <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-[var(--accent-primary)]/20 to-[var(--accent-secondary)]/20">
                   <Sparkles className="h-9 w-9 text-[var(--accent-primary)]" />
                 </div>
 
-                <h3 className="text-2xl font-semibold text-[var(--text-primary)] mb-3">
+                <h3 className="mb-3 text-2xl font-semibold text-[var(--text-primary)]">
                   Start a conversation
                 </h3>
-                <p className="text-[var(--text-secondary)] mb-8 max-w-md">
+                <p className="mb-8 max-w-md text-[var(--text-secondary)]">
                   Ask questions about your sources and get AI-powered insights with citations.
                 </p>
 
                 {/* Notebook Summary */}
                 {notebookSummary && (
-                  <div className="w-full max-w-lg mb-8 p-4 rounded-xl bg-[var(--bg-secondary)] border border-[rgba(255,255,255,0.1)]">
+                  <div className="mb-8 w-full max-w-lg rounded-xl border border-[rgba(255,255,255,0.1)] bg-[var(--bg-secondary)] p-4">
                     <p className="text-sm text-[var(--text-secondary)]">{notebookSummary}</p>
                   </div>
                 )}
 
                 {/* Suggested Questions */}
-                <div className="flex flex-wrap justify-center gap-2 max-w-lg">
+                <div className="flex max-w-lg flex-wrap justify-center gap-2">
                   {SUGGESTED_QUESTIONS.map((q) => (
                     <Tooltip key={q}>
                       <TooltipTrigger asChild>
@@ -569,7 +579,7 @@ export function ChatPanel({
                           whileTap={selectedSourcesCount > 0 ? { scale: 0.98 } : {}}
                           onClick={() => selectedSourcesCount > 0 && onSendMessage(q)}
                           disabled={sending || selectedSourcesCount === 0}
-                          className="px-4 py-2.5 text-sm rounded-xl border border-[rgba(255,255,255,0.1)] bg-[var(--bg-secondary)] hover:bg-[var(--bg-tertiary)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[var(--bg-secondary)] disabled:hover:text-[var(--text-secondary)]"
+                          className="rounded-xl border border-[rgba(255,255,255,0.1)] bg-[var(--bg-secondary)] px-4 py-2.5 text-sm text-[var(--text-secondary)] transition-all hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-[var(--bg-secondary)] disabled:hover:text-[var(--text-secondary)]"
                         >
                           {q}
                         </motion.button>
@@ -583,7 +593,7 @@ export function ChatPanel({
                   ))}
                 </div>
                 {selectedSourcesCount === 0 && totalSourcesCount > 0 && (
-                  <p className="text-sm text-[var(--text-tertiary)] mt-4">
+                  <p className="mt-4 text-sm text-[var(--text-tertiary)]">
                     Select sources from the left panel to get started
                   </p>
                 )}
@@ -599,31 +609,29 @@ export function ChatPanel({
                       className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
                     >
                       <div
-                        className={`
-                          max-w-[85%] rounded-2xl px-5 py-4
-                          ${msg.role === 'user'
-                            ? 'bg-[var(--accent-primary)] text-white rounded-br-md'
-                            : 'bg-[var(--bg-secondary)] border border-[rgba(255,255,255,0.1)] rounded-bl-md'
-                          }
-                        `}
+                        className={`max-w-[85%] rounded-2xl px-5 py-4 ${
+                          msg.role === 'user'
+                            ? 'rounded-br-md bg-[var(--accent-primary)] text-white'
+                            : 'rounded-bl-md border border-[rgba(255,255,255,0.1)] bg-[var(--bg-secondary)]'
+                        } `}
                       >
                         <MessageContent content={msg.content} citations={msg.citations} />
 
                         {/* Actions for assistant messages */}
                         {msg.role === 'assistant' && (
-                          <div className="flex items-center gap-3 mt-4 pt-3 border-t border-[rgba(255,255,255,0.1)]">
+                          <div className="mt-4 flex items-center gap-3 border-t border-[rgba(255,255,255,0.1)] pt-3">
                             {msg.cost_usd !== null && msg.cost_usd > 0 && (
                               <span className="text-xs text-[var(--text-tertiary)]">
                                 ${msg.cost_usd.toFixed(4)}
                               </span>
                             )}
-                            <div className="flex items-center gap-1 ml-auto">
+                            <div className="ml-auto flex items-center gap-1">
                               <Tooltip>
                                 <TooltipTrigger asChild>
                                   <Button
                                     variant="ghost"
                                     size="icon"
-                                    className="h-7 w-7 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)]"
+                                    className="h-7 w-7 text-[var(--text-tertiary)] hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)]"
                                     onClick={() => copyToClipboard(msg.content)}
                                   >
                                     <Copy className="h-3.5 w-3.5" />
@@ -637,7 +645,7 @@ export function ChatPanel({
                                     <Button
                                       variant="ghost"
                                       size="icon"
-                                      className="h-7 w-7 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)]"
+                                      className="h-7 w-7 text-[var(--text-tertiary)] hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)]"
                                       onClick={() => onSaveResponse(msg)}
                                     >
                                       <StickyNote className="h-3.5 w-3.5" />
@@ -661,12 +669,21 @@ export function ChatPanel({
                     animate={{ opacity: 1, y: 0 }}
                     className="flex justify-start"
                   >
-                    <div className="bg-[var(--bg-secondary)] border border-[rgba(255,255,255,0.1)] rounded-2xl rounded-bl-md px-5 py-4">
+                    <div className="rounded-2xl rounded-bl-md border border-[rgba(255,255,255,0.1)] bg-[var(--bg-secondary)] px-5 py-4">
                       <div className="flex items-center gap-2">
                         <div className="flex gap-1">
-                          <span className="w-2 h-2 rounded-full bg-[var(--accent-primary)] typing-dot" style={{ animationDelay: '0ms' }} />
-                          <span className="w-2 h-2 rounded-full bg-[var(--accent-primary)] typing-dot" style={{ animationDelay: '200ms' }} />
-                          <span className="w-2 h-2 rounded-full bg-[var(--accent-primary)] typing-dot" style={{ animationDelay: '400ms' }} />
+                          <span
+                            className="typing-dot h-2 w-2 rounded-full bg-[var(--accent-primary)]"
+                            style={{ animationDelay: '0ms' }}
+                          />
+                          <span
+                            className="typing-dot h-2 w-2 rounded-full bg-[var(--accent-primary)]"
+                            style={{ animationDelay: '200ms' }}
+                          />
+                          <span
+                            className="typing-dot h-2 w-2 rounded-full bg-[var(--accent-primary)]"
+                            style={{ animationDelay: '400ms' }}
+                          />
                         </div>
                         <span className="text-sm text-[var(--text-tertiary)]">Thinking...</span>
                       </div>
@@ -682,13 +699,13 @@ export function ChatPanel({
 
         {/* Input Area */}
         <div className="border-t border-[rgba(255,255,255,0.1)] bg-[var(--bg-primary)] p-4">
-          <div className="max-w-3xl mx-auto">
+          <div className="mx-auto max-w-3xl">
             {/* Source warning */}
             {selectedSourcesCount === 0 && totalSourcesCount > 0 && (
               <motion.div
                 initial={{ opacity: 0, y: 5 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="flex items-center gap-2 mb-3 px-4 py-2.5 text-sm text-[var(--warning)] bg-[var(--warning)]/10 rounded-xl border border-[var(--warning)]/20"
+                className="mb-3 flex items-center gap-2 rounded-xl border border-[var(--warning)]/20 bg-[var(--warning)]/10 px-4 py-2.5 text-sm text-[var(--warning)]"
               >
                 <AlertCircle className="h-4 w-4 shrink-0" />
                 <span>Select sources from the left panel for contextual answers</span>
@@ -697,7 +714,7 @@ export function ChatPanel({
 
             {/* Input */}
             <div className="flex items-end gap-3">
-              <div className="flex-1 relative">
+              <div className="relative flex-1">
                 <Textarea
                   ref={textareaRef}
                   placeholder="Ask a question about your sources..."
@@ -706,14 +723,14 @@ export function ChatPanel({
                   onKeyDown={handleKeyDown}
                   disabled={sending}
                   rows={1}
-                  className="min-h-[52px] max-h-[200px] resize-none py-4 px-4 pr-12 text-[15px] rounded-xl bg-[var(--bg-secondary)] border-[rgba(255,255,255,0.1)] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:border-[var(--accent-primary)] focus:ring-1 focus:ring-[var(--accent-primary)]"
+                  className="max-h-[200px] min-h-[52px] resize-none rounded-xl border-[rgba(255,255,255,0.1)] bg-[var(--bg-secondary)] px-4 py-4 pr-12 text-[15px] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:border-[var(--accent-primary)] focus:ring-1 focus:ring-[var(--accent-primary)]"
                 />
               </div>
               <Button
                 onClick={() => onSendMessage()}
                 disabled={sending || !message.trim()}
                 size="lg"
-                className="h-[52px] w-[52px] rounded-xl bg-[var(--accent-primary)] hover:bg-[var(--accent-primary)]/90 text-white shrink-0"
+                className="h-[52px] w-[52px] shrink-0 rounded-xl bg-[var(--accent-primary)] text-white hover:bg-[var(--accent-primary)]/90"
               >
                 {sending ? (
                   <Loader2 className="h-5 w-5 animate-spin" />
@@ -726,58 +743,63 @@ export function ChatPanel({
         </div>
       </div>
     </div>
-  )
+  );
 }
 
 // Helper component to render message content with citations
 function MessageContent({ content, citations }: { content: string; citations: Citation[] }) {
-  const [activeCitation, setActiveCitation] = useState<number | null>(null)
-  const [loadingSource, setLoadingSource] = useState<string | null>(null)
-  const supabase = createClient()
+  const [activeCitation, setActiveCitation] = useState<number | null>(null);
+  const [loadingSource, setLoadingSource] = useState<string | null>(null);
+  const supabase = createClient();
 
   // Open source file in new tab
-  const viewSource = useCallback(async (citation: Citation) => {
-    if (!citation.source_id) {
-      toast.error('Source not available')
-      return
-    }
-
-    setLoadingSource(citation.source_id)
-    try {
-      const { data: { session } } = await supabase.auth.getSession()
-      const response = await fetch(`/api/sources/${citation.source_id}/view`, {
-        headers: {
-          'Authorization': `Bearer ${session?.access_token}`,
-        },
-      })
-
-      if (!response.ok) {
-        throw new Error('Failed to get source URL')
+  const viewSource = useCallback(
+    async (citation: Citation) => {
+      if (!citation.source_id) {
+        toast.error('Source not available');
+        return;
       }
 
-      const data = await response.json()
-      if (data.url) {
-        window.open(data.url, '_blank')
+      setLoadingSource(citation.source_id);
+      try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        const response = await fetch(`/api/sources/${citation.source_id}/view`, {
+          headers: {
+            Authorization: `Bearer ${session?.access_token}`,
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to get source URL');
+        }
+
+        const data = await response.json();
+        if (data.url) {
+          window.open(data.url, '_blank');
+        }
+      } catch (error) {
+        console.error('Failed to view source:', error);
+        toast.error('Failed to open source');
       }
-    } catch (error) {
-      console.error('Failed to view source:', error)
-      toast.error('Failed to open source')
-    }
-    setLoadingSource(null)
-  }, [supabase])
+      setLoadingSource(null);
+    },
+    [supabase]
+  );
 
   // Parse content to make citation references clickable
   const renderContentWithCitations = useCallback(() => {
     // Split content by citation patterns like [1], [2], etc.
-    const citationRegex = /\[(\d+)\]/g
-    const parts: React.ReactNode[] = []
-    let lastIndex = 0
-    let match
+    const citationRegex = /\[(\d+)\]/g;
+    const parts: React.ReactNode[] = [];
+    let lastIndex = 0;
+    let match;
 
     while ((match = citationRegex.exec(content)) !== null) {
       // Add text before the citation
       if (match.index > lastIndex) {
-        const textBefore = content.slice(lastIndex, match.index)
+        const textBefore = content.slice(lastIndex, match.index);
         parts.push(
           <ReactMarkdown
             key={`text-${lastIndex}`}
@@ -786,14 +808,25 @@ function MessageContent({ content, citations }: { content: string; citations: Ci
               p: ({ children }) => <span>{children}</span>,
               strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
               em: ({ children }) => <em className="italic">{children}</em>,
-              ul: ({ children }) => <ul className="list-disc list-inside my-2 space-y-1">{children}</ul>,
-              ol: ({ children }) => <ol className="list-decimal list-inside my-2 space-y-1">{children}</ol>,
+              ul: ({ children }) => (
+                <ul className="my-2 list-inside list-disc space-y-1">{children}</ul>
+              ),
+              ol: ({ children }) => (
+                <ol className="my-2 list-inside list-decimal space-y-1">{children}</ol>
+              ),
               li: ({ children }) => <li className="text-[var(--text-primary)]">{children}</li>,
               code: ({ children }) => (
-                <code className="px-1.5 py-0.5 rounded bg-[var(--bg-tertiary)] text-sm font-mono">{children}</code>
+                <code className="rounded bg-[var(--bg-tertiary)] px-1.5 py-0.5 font-mono text-sm">
+                  {children}
+                </code>
               ),
               a: ({ href, children }) => (
-                <a href={href} target="_blank" rel="noopener noreferrer" className="text-[var(--accent-primary)] hover:underline">
+                <a
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[var(--accent-primary)] hover:underline"
+                >
                   {children}
                 </a>
               ),
@@ -801,33 +834,35 @@ function MessageContent({ content, citations }: { content: string; citations: Ci
           >
             {textBefore}
           </ReactMarkdown>
-        )
+        );
       }
 
       // Add the clickable citation
-      const citationNumber = parseInt(match[1])
-      const citation = citations?.find(c => c.number === citationNumber)
+      const citationNumber = parseInt(match[1]);
+      const citation = citations?.find((c) => c.number === citationNumber);
 
       parts.push(
         <Popover key={`citation-${match.index}`}>
           <PopoverTrigger asChild>
             <button
-              className="inline-flex items-center justify-center min-w-[1.5rem] h-5 px-1 mx-0.5 text-xs font-medium rounded bg-[var(--accent-primary)]/20 text-[var(--accent-primary)] hover:bg-[var(--accent-primary)]/30 transition-colors cursor-pointer align-middle"
-              onClick={() => setActiveCitation(activeCitation === citationNumber ? null : citationNumber)}
+              className="mx-0.5 inline-flex h-5 min-w-[1.5rem] cursor-pointer items-center justify-center rounded bg-[var(--accent-primary)]/20 px-1 align-middle text-xs font-medium text-[var(--accent-primary)] transition-colors hover:bg-[var(--accent-primary)]/30"
+              onClick={() =>
+                setActiveCitation(activeCitation === citationNumber ? null : citationNumber)
+              }
             >
               [{citationNumber}]
             </button>
           </PopoverTrigger>
           <PopoverContent
-            className="w-80 p-4 bg-[#1a1a2e] border border-[rgba(255,255,255,0.2)] shadow-xl z-[100]"
+            className="z-[100] w-80 border border-[rgba(255,255,255,0.2)] bg-[#1a1a2e] p-4 shadow-xl"
             sideOffset={5}
           >
             <div className="space-y-3">
               <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded bg-[var(--accent-primary)]/20 flex items-center justify-center text-xs font-bold text-[var(--accent-primary)]">
+                <div className="flex h-6 w-6 items-center justify-center rounded bg-[var(--accent-primary)]/20 text-xs font-bold text-[var(--accent-primary)]">
                   {citationNumber}
                 </div>
-                <p className="text-sm font-medium text-[var(--text-primary)] flex-1 truncate">
+                <p className="flex-1 truncate text-sm font-medium text-[var(--text-primary)]">
                   {citation?.source_name || 'Source'}
                 </p>
                 {citation?.file_path && (
@@ -842,7 +877,7 @@ function MessageContent({ content, citations }: { content: string; citations: Ci
                       <Loader2 className="h-3 w-3 animate-spin" />
                     ) : (
                       <>
-                        <ExternalLink className="h-3 w-3 mr-1" />
+                        <ExternalLink className="mr-1 h-3 w-3" />
                         View
                       </>
                     )}
@@ -850,7 +885,7 @@ function MessageContent({ content, citations }: { content: string; citations: Ci
                 )}
               </div>
               {citation?.text ? (
-                <p className="text-sm text-[var(--text-secondary)] leading-relaxed border-l-2 border-[var(--accent-primary)]/30 pl-3">
+                <p className="border-l-2 border-[var(--accent-primary)]/30 pl-3 text-sm leading-relaxed text-[var(--text-secondary)]">
                   "{citation.text}"
                 </p>
               ) : (
@@ -861,14 +896,14 @@ function MessageContent({ content, citations }: { content: string; citations: Ci
             </div>
           </PopoverContent>
         </Popover>
-      )
+      );
 
-      lastIndex = match.index + match[0].length
+      lastIndex = match.index + match[0].length;
     }
 
     // Add remaining text after last citation
     if (lastIndex < content.length) {
-      const remainingText = content.slice(lastIndex)
+      const remainingText = content.slice(lastIndex);
       parts.push(
         <ReactMarkdown
           key={`text-${lastIndex}`}
@@ -877,14 +912,25 @@ function MessageContent({ content, citations }: { content: string; citations: Ci
             p: ({ children }) => <span>{children}</span>,
             strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
             em: ({ children }) => <em className="italic">{children}</em>,
-            ul: ({ children }) => <ul className="list-disc list-inside my-2 space-y-1">{children}</ul>,
-            ol: ({ children }) => <ol className="list-decimal list-inside my-2 space-y-1">{children}</ol>,
+            ul: ({ children }) => (
+              <ul className="my-2 list-inside list-disc space-y-1">{children}</ul>
+            ),
+            ol: ({ children }) => (
+              <ol className="my-2 list-inside list-decimal space-y-1">{children}</ol>
+            ),
             li: ({ children }) => <li className="text-[var(--text-primary)]">{children}</li>,
             code: ({ children }) => (
-              <code className="px-1.5 py-0.5 rounded bg-[var(--bg-tertiary)] text-sm font-mono">{children}</code>
+              <code className="rounded bg-[var(--bg-tertiary)] px-1.5 py-0.5 font-mono text-sm">
+                {children}
+              </code>
             ),
             a: ({ href, children }) => (
-              <a href={href} target="_blank" rel="noopener noreferrer" className="text-[var(--accent-primary)] hover:underline">
+              <a
+                href={href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[var(--accent-primary)] hover:underline"
+              >
                 {children}
               </a>
             ),
@@ -892,7 +938,7 @@ function MessageContent({ content, citations }: { content: string; citations: Ci
         >
           {remainingText}
         </ReactMarkdown>
-      )
+      );
     }
 
     // If no citations found, just render markdown
@@ -904,25 +950,38 @@ function MessageContent({ content, citations }: { content: string; citations: Ci
             p: ({ children }) => <p className="mb-3 last:mb-0">{children}</p>,
             strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
             em: ({ children }) => <em className="italic">{children}</em>,
-            ul: ({ children }) => <ul className="list-disc list-inside my-2 space-y-1">{children}</ul>,
-            ol: ({ children }) => <ol className="list-decimal list-inside my-2 space-y-1">{children}</ol>,
+            ul: ({ children }) => (
+              <ul className="my-2 list-inside list-disc space-y-1">{children}</ul>
+            ),
+            ol: ({ children }) => (
+              <ol className="my-2 list-inside list-decimal space-y-1">{children}</ol>
+            ),
             li: ({ children }) => <li className="text-[var(--text-primary)]">{children}</li>,
             code: ({ children }) => (
-              <code className="px-1.5 py-0.5 rounded bg-[var(--bg-tertiary)] text-sm font-mono">{children}</code>
+              <code className="rounded bg-[var(--bg-tertiary)] px-1.5 py-0.5 font-mono text-sm">
+                {children}
+              </code>
             ),
             pre: ({ children }) => (
-              <pre className="p-3 rounded-lg bg-[var(--bg-tertiary)] overflow-x-auto my-2">{children}</pre>
+              <pre className="my-2 overflow-x-auto rounded-lg bg-[var(--bg-tertiary)] p-3">
+                {children}
+              </pre>
             ),
             a: ({ href, children }) => (
-              <a href={href} target="_blank" rel="noopener noreferrer" className="text-[var(--accent-primary)] hover:underline">
+              <a
+                href={href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[var(--accent-primary)] hover:underline"
+              >
                 {children}
               </a>
             ),
-            h1: ({ children }) => <h1 className="text-xl font-bold mb-2 mt-4">{children}</h1>,
-            h2: ({ children }) => <h2 className="text-lg font-bold mb-2 mt-3">{children}</h2>,
-            h3: ({ children }) => <h3 className="text-base font-bold mb-1 mt-2">{children}</h3>,
+            h1: ({ children }) => <h1 className="mt-4 mb-2 text-xl font-bold">{children}</h1>,
+            h2: ({ children }) => <h2 className="mt-3 mb-2 text-lg font-bold">{children}</h2>,
+            h3: ({ children }) => <h3 className="mt-2 mb-1 text-base font-bold">{children}</h3>,
             blockquote: ({ children }) => (
-              <blockquote className="border-l-2 border-[var(--accent-primary)] pl-3 my-2 text-[var(--text-secondary)]">
+              <blockquote className="my-2 border-l-2 border-[var(--accent-primary)] pl-3 text-[var(--text-secondary)]">
                 {children}
               </blockquote>
             ),
@@ -930,39 +989,37 @@ function MessageContent({ content, citations }: { content: string; citations: Ci
         >
           {content}
         </ReactMarkdown>
-      )
+      );
     }
 
-    return parts
-  }, [content, citations, activeCitation, loadingSource, viewSource])
+    return parts;
+  }, [content, citations, activeCitation, loadingSource, viewSource]);
 
   return (
     <div className="text-[15px] leading-relaxed text-[var(--text-primary)]">
-      <div className="prose prose-invert max-w-none">
-        {renderContentWithCitations()}
-      </div>
+      <div className="prose prose-invert max-w-none">{renderContentWithCitations()}</div>
       {citations && citations.length > 0 && (
-        <div className="mt-4 pt-3 border-t border-[rgba(255,255,255,0.1)]">
-          <p className="text-xs font-medium text-[var(--text-tertiary)] mb-2">Sources:</p>
+        <div className="mt-4 border-t border-[rgba(255,255,255,0.1)] pt-3">
+          <p className="mb-2 text-xs font-medium text-[var(--text-tertiary)]">Sources:</p>
           <div className="flex flex-wrap gap-2">
             {citations.map((citation, idx) => (
               <Popover key={idx}>
                 <PopoverTrigger asChild>
-                  <button className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs rounded-lg bg-[var(--accent-primary)]/10 text-[var(--accent-primary)] hover:bg-[var(--accent-primary)]/20 transition-colors cursor-pointer">
+                  <button className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-[var(--accent-primary)]/10 px-2.5 py-1.5 text-xs text-[var(--accent-primary)] transition-colors hover:bg-[var(--accent-primary)]/20">
                     <span className="font-semibold">[{citation.number}]</span>
-                    <span className="truncate max-w-[150px]">{citation.source_name}</span>
+                    <span className="max-w-[150px] truncate">{citation.source_name}</span>
                   </button>
                 </PopoverTrigger>
                 <PopoverContent
-                  className="w-80 p-4 bg-[#1a1a2e] border border-[rgba(255,255,255,0.2)] shadow-xl z-[100]"
+                  className="z-[100] w-80 border border-[rgba(255,255,255,0.2)] bg-[#1a1a2e] p-4 shadow-xl"
                   sideOffset={5}
                 >
                   <div className="space-y-3">
                     <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 rounded bg-[var(--accent-primary)]/20 flex items-center justify-center text-xs font-bold text-[var(--accent-primary)]">
+                      <div className="flex h-6 w-6 items-center justify-center rounded bg-[var(--accent-primary)]/20 text-xs font-bold text-[var(--accent-primary)]">
                         {citation.number}
                       </div>
-                      <p className="text-sm font-medium text-[var(--text-primary)] flex-1 truncate">
+                      <p className="flex-1 truncate text-sm font-medium text-[var(--text-primary)]">
                         {citation.source_name}
                       </p>
                       {citation.file_path && (
@@ -977,7 +1034,7 @@ function MessageContent({ content, citations }: { content: string; citations: Ci
                             <Loader2 className="h-3 w-3 animate-spin" />
                           ) : (
                             <>
-                              <ExternalLink className="h-3 w-3 mr-1" />
+                              <ExternalLink className="mr-1 h-3 w-3" />
                               View
                             </>
                           )}
@@ -985,7 +1042,7 @@ function MessageContent({ content, citations }: { content: string; citations: Ci
                       )}
                     </div>
                     {citation.text ? (
-                      <p className="text-sm text-[var(--text-secondary)] leading-relaxed border-l-2 border-[var(--accent-primary)]/30 pl-3">
+                      <p className="border-l-2 border-[var(--accent-primary)]/30 pl-3 text-sm leading-relaxed text-[var(--text-secondary)]">
                         "{citation.text}"
                       </p>
                     ) : (
@@ -1001,5 +1058,5 @@ function MessageContent({ content, citations }: { content: string; citations: Ci
         </div>
       )}
     </div>
-  )
+  );
 }

@@ -1,11 +1,17 @@
-'use client'
+'use client';
 
-import { useEffect, useState, useMemo } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { createClient, Notebook } from '@/lib/supabase'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
+import { User } from '@supabase/supabase-js';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Plus, BookOpen, Loader2 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState, useMemo } from 'react';
+import { toast } from 'sonner';
+
+import { FeaturedCarousel } from '@/components/dashboard/featured-carousel';
+import { DashboardHeader } from '@/components/dashboard/header';
+import { NotebookCard, CreateNotebookCard } from '@/components/dashboard/notebook-card';
+import { DashboardTabs } from '@/components/dashboard/tabs';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -13,192 +19,184 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog'
-import { Plus, BookOpen, Loader2 } from 'lucide-react'
-import { useRouter } from 'next/navigation'
-import { toast } from 'sonner'
-import { User } from '@supabase/supabase-js'
-import { DashboardHeader } from '@/components/dashboard/header'
-import { DashboardTabs } from '@/components/dashboard/tabs'
-import { FeaturedCarousel } from '@/components/dashboard/featured-carousel'
-import { NotebookCard, CreateNotebookCard } from '@/components/dashboard/notebook-card'
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { createClient, Notebook } from '@/lib/supabase';
 
-const EMOJI_OPTIONS = ['📚', '🔬', '💡', '🎯', '📊', '🚀', '💻', '🎨', '📝', '🔍', '🧠', '⚡']
+const EMOJI_OPTIONS = ['📚', '🔬', '💡', '🎯', '📊', '🚀', '💻', '🎨', '📝', '🔍', '🧠', '⚡'];
 
 export default function Dashboard() {
-  const [user, setUser] = useState<User | null>(null)
-  const [notebooks, setNotebooks] = useState<Notebook[]>([])
-  const [loading, setLoading] = useState(true)
-  const [creating, setCreating] = useState(false)
-  const [newNotebookName, setNewNotebookName] = useState('')
-  const [newNotebookDescription, setNewNotebookDescription] = useState('')
-  const [selectedEmoji, setSelectedEmoji] = useState('📚')
-  const [dialogOpen, setDialogOpen] = useState(false)
-  const [activeTab, setActiveTab] = useState('recent')
-  const [searchQuery, setSearchQuery] = useState('')
-  const router = useRouter()
-  const supabase = createClient()
+  const [user, setUser] = useState<User | null>(null);
+  const [notebooks, setNotebooks] = useState<Notebook[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [creating, setCreating] = useState(false);
+  const [newNotebookName, setNewNotebookName] = useState('');
+  const [newNotebookDescription, setNewNotebookDescription] = useState('');
+  const [selectedEmoji, setSelectedEmoji] = useState('📚');
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState('recent');
+  const [searchQuery, setSearchQuery] = useState('');
+  const router = useRouter();
+  const supabase = createClient();
 
   useEffect(() => {
     const checkUser = async () => {
       try {
-        const { data: { user }, error } = await supabase.auth.getUser()
+        const {
+          data: { user },
+          error,
+        } = await supabase.auth.getUser();
         if (error || !user) {
-          router.push('/auth/login')
-          return
+          router.push('/auth/login');
+          return;
         }
-        setUser(user)
-        fetchNotebooks()
+        setUser(user);
+        fetchNotebooks();
       } catch (e) {
-        console.error('Auth check failed:', e)
-        router.push('/auth/login')
+        console.error('Auth check failed:', e);
+        router.push('/auth/login');
       }
-    }
-    checkUser()
-  }, [])
+    };
+    checkUser();
+  }, []);
 
   const fetchNotebooks = async () => {
-    setLoading(true)
+    setLoading(true);
     try {
       const { data, error } = await supabase
         .from('notebooks')
         .select('*')
-        .order('created_at', { ascending: false })
+        .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Failed to load notebooks:', error)
-        toast.error('Failed to load notebooks')
+        console.error('Failed to load notebooks:', error);
+        toast.error('Failed to load notebooks');
       } else {
-        setNotebooks(data || [])
+        setNotebooks(data || []);
       }
     } catch (e) {
-      console.error('Network error loading notebooks:', e)
-      toast.error('Network error - please check your connection')
+      console.error('Network error loading notebooks:', e);
+      toast.error('Network error - please check your connection');
     }
-    setLoading(false)
-  }
+    setLoading(false);
+  };
 
   const createNotebook = async () => {
-    if (!newNotebookName.trim()) return
+    if (!newNotebookName.trim()) return;
 
-    setCreating(true)
+    setCreating(true);
     const { data, error } = await supabase
       .from('notebooks')
       .insert({
         name: newNotebookName,
         description: newNotebookDescription || null,
         emoji: selectedEmoji,
-        user_id: user?.id
+        user_id: user?.id,
       })
       .select()
-      .single()
+      .single();
 
     if (error) {
-      toast.error('Failed to create notebook')
+      toast.error('Failed to create notebook');
     } else {
-      toast.success('Notebook created!')
-      setNotebooks([data, ...notebooks])
-      resetDialog()
-      router.push(`/notebooks/${data.id}`)
+      toast.success('Notebook created!');
+      setNotebooks([data, ...notebooks]);
+      resetDialog();
+      router.push(`/notebooks/${data.id}`);
     }
-    setCreating(false)
-  }
+    setCreating(false);
+  };
 
   const resetDialog = () => {
-    setNewNotebookName('')
-    setNewNotebookDescription('')
-    setSelectedEmoji('📚')
-    setDialogOpen(false)
-  }
+    setNewNotebookName('');
+    setNewNotebookDescription('');
+    setSelectedEmoji('📚');
+    setDialogOpen(false);
+  };
 
   const handleLogout = async () => {
-    await supabase.auth.signOut()
-    router.push('/auth/login')
-  }
+    await supabase.auth.signOut();
+    router.push('/auth/login');
+  };
 
   const deleteNotebook = async (id: string) => {
-    const { error } = await supabase
-      .from('notebooks')
-      .delete()
-      .eq('id', id)
+    const { error } = await supabase.from('notebooks').delete().eq('id', id);
 
     if (error) {
-      toast.error('Failed to delete notebook')
+      toast.error('Failed to delete notebook');
     } else {
-      setNotebooks(notebooks.filter(n => n.id !== id))
-      toast.success('Notebook deleted')
+      setNotebooks(notebooks.filter((n) => n.id !== id));
+      toast.success('Notebook deleted');
     }
-  }
+  };
 
   const toggleFeatured = async (id: string) => {
-    const notebook = notebooks.find(n => n.id === id)
-    if (!notebook) return
+    const notebook = notebooks.find((n) => n.id === id);
+    if (!notebook) return;
 
     const { error } = await supabase
       .from('notebooks')
       .update({ is_featured: !notebook.is_featured })
-      .eq('id', id)
+      .eq('id', id);
 
     if (error) {
-      toast.error('Failed to update notebook')
+      toast.error('Failed to update notebook');
     } else {
-      setNotebooks(notebooks.map(n =>
-        n.id === id ? { ...n, is_featured: !n.is_featured } : n
-      ))
+      setNotebooks(notebooks.map((n) => (n.id === id ? { ...n, is_featured: !n.is_featured } : n)));
     }
-  }
+  };
 
   const formatLastEdited = (date: string) => {
-    const now = new Date()
-    const edited = new Date(date)
-    const diffMs = now.getTime() - edited.getTime()
-    const diffMins = Math.floor(diffMs / 60000)
-    const diffHours = Math.floor(diffMins / 60)
-    const diffDays = Math.floor(diffHours / 24)
+    const now = new Date();
+    const edited = new Date(date);
+    const diffMs = now.getTime() - edited.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMins / 60);
+    const diffDays = Math.floor(diffHours / 24);
 
-    if (diffMins < 1) return 'just now'
-    if (diffMins < 60) return `${diffMins}m ago`
-    if (diffHours < 24) return `${diffHours}h ago`
-    if (diffDays < 7) return `${diffDays}d ago`
-    return edited.toLocaleDateString()
-  }
+    if (diffMins < 1) return 'just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays < 7) return `${diffDays}d ago`;
+    return edited.toLocaleDateString();
+  };
 
   const filteredNotebooks = useMemo(() => {
-    let filtered = notebooks
+    let filtered = notebooks;
 
     // Apply search filter
     if (searchQuery) {
-      const query = searchQuery.toLowerCase()
+      const query = searchQuery.toLowerCase();
       filtered = filtered.filter(
-        n => n.name.toLowerCase().includes(query) ||
-             n.description?.toLowerCase().includes(query)
-      )
+        (n) => n.name.toLowerCase().includes(query) || n.description?.toLowerCase().includes(query)
+      );
     }
 
     // Apply tab filter
     if (activeTab === 'featured') {
-      filtered = filtered.filter(n => n.is_featured)
+      filtered = filtered.filter((n) => n.is_featured);
     } else if (activeTab === 'archived') {
-      filtered = filtered.filter(n => n.is_archived)
+      filtered = filtered.filter((n) => n.is_archived);
     } else {
       // Recent: exclude archived
-      filtered = filtered.filter(n => !n.is_archived)
+      filtered = filtered.filter((n) => !n.is_archived);
     }
 
-    return filtered
-  }, [notebooks, searchQuery, activeTab])
+    return filtered;
+  }, [notebooks, searchQuery, activeTab]);
 
-  const featuredNotebooks = useMemo(() =>
-    notebooks.filter(n => n.is_featured && !n.is_archived),
+  const featuredNotebooks = useMemo(
+    () => notebooks.filter((n) => n.is_featured && !n.is_archived),
     [notebooks]
-  )
+  );
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[var(--bg-primary)]">
+      <div className="flex min-h-screen items-center justify-center bg-[var(--bg-primary)]">
         <Loader2 className="h-8 w-8 animate-spin text-[var(--accent-primary)]" />
       </div>
-    )
+    );
   }
 
   return (
@@ -210,7 +208,7 @@ export default function Dashboard() {
         onLogout={handleLogout}
       />
 
-      <main className="max-w-7xl mx-auto px-6 py-8">
+      <main className="mx-auto max-w-7xl px-6 py-8">
         {/* Featured Section */}
         {activeTab === 'recent' && featuredNotebooks.length > 0 && (
           <motion.div
@@ -219,7 +217,7 @@ export default function Dashboard() {
             className="mb-8"
           >
             <FeaturedCarousel
-              notebooks={featuredNotebooks.map(n => ({
+              notebooks={featuredNotebooks.map((n) => ({
                 id: n.id,
                 emoji: n.emoji,
                 name: n.name,
@@ -236,7 +234,7 @@ export default function Dashboard() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6"
+          className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-center"
         >
           <div className="flex items-center gap-4">
             <DashboardTabs activeTab={activeTab} onTabChange={setActiveTab} />
@@ -244,9 +242,9 @@ export default function Dashboard() {
 
           <Button
             onClick={() => setDialogOpen(true)}
-            className="h-10 px-4 rounded-xl bg-[var(--accent-primary)] hover:bg-[var(--accent-primary)]/90 text-white font-medium btn-hover"
+            className="btn-hover h-10 rounded-xl bg-[var(--accent-primary)] px-4 font-medium text-white hover:bg-[var(--accent-primary)]/90"
           >
-            <Plus className="h-4 w-4 mr-2" />
+            <Plus className="mr-2 h-4 w-4" />
             New Notebook
           </Button>
         </motion.div>
@@ -261,24 +259,23 @@ export default function Dashboard() {
               exit={{ opacity: 0, y: -20 }}
               className="flex flex-col items-center justify-center py-20"
             >
-              <div className="w-20 h-20 rounded-2xl bg-[var(--bg-tertiary)] flex items-center justify-center mb-6">
+              <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-[var(--bg-tertiary)]">
                 <BookOpen className="h-10 w-10 text-[var(--text-tertiary)]" />
               </div>
-              <h3 className="text-xl font-semibold text-[var(--text-primary)] mb-2">
+              <h3 className="mb-2 text-xl font-semibold text-[var(--text-primary)]">
                 {searchQuery ? 'No notebooks found' : 'No notebooks yet'}
               </h3>
-              <p className="text-[var(--text-secondary)] mb-6 text-center max-w-sm">
+              <p className="mb-6 max-w-sm text-center text-[var(--text-secondary)]">
                 {searchQuery
                   ? 'Try a different search term'
-                  : 'Create your first notebook to start researching with AI-powered insights'
-                }
+                  : 'Create your first notebook to start researching with AI-powered insights'}
               </p>
               {!searchQuery && (
                 <Button
                   onClick={() => setDialogOpen(true)}
-                  className="h-11 px-6 rounded-xl bg-[var(--accent-primary)] hover:bg-[var(--accent-primary)]/90 text-white font-medium btn-hover"
+                  className="btn-hover h-11 rounded-xl bg-[var(--accent-primary)] px-6 font-medium text-white hover:bg-[var(--accent-primary)]/90"
                 >
-                  <Plus className="h-4 w-4 mr-2" />
+                  <Plus className="mr-2 h-4 w-4" />
                   Create Notebook
                 </Button>
               )}
@@ -289,7 +286,7 @@ export default function Dashboard() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
+              className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
             >
               <CreateNotebookCard onClick={() => setDialogOpen(true)} />
 
@@ -321,7 +318,7 @@ export default function Dashboard() {
 
       {/* Create Notebook Dialog */}
       <Dialog open={dialogOpen} onOpenChange={(open) => !open && resetDialog()}>
-        <DialogContent className="sm:max-w-md bg-[var(--bg-secondary)] border-[rgba(255,255,255,0.1)]">
+        <DialogContent className="border-[rgba(255,255,255,0.1)] bg-[var(--bg-secondary)] sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="text-[var(--text-primary)]">Create New Notebook</DialogTitle>
             <DialogDescription className="text-[var(--text-secondary)]">
@@ -339,13 +336,11 @@ export default function Dashboard() {
                     key={emoji}
                     type="button"
                     onClick={() => setSelectedEmoji(emoji)}
-                    className={`
-                      w-10 h-10 rounded-xl text-xl flex items-center justify-center transition-all
-                      ${selectedEmoji === emoji
+                    className={`flex h-10 w-10 items-center justify-center rounded-xl text-xl transition-all ${
+                      selectedEmoji === emoji
                         ? 'bg-[var(--accent-primary)]/20 ring-2 ring-[var(--accent-primary)]'
                         : 'bg-[var(--bg-tertiary)] hover:bg-[var(--bg-surface)]'
-                      }
-                    `}
+                    } `}
                   >
                     {emoji}
                   </button>
@@ -361,7 +356,7 @@ export default function Dashboard() {
                 value={newNotebookName}
                 onChange={(e) => setNewNotebookName(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && createNotebook()}
-                className="h-11 bg-[var(--bg-tertiary)] border-[rgba(255,255,255,0.1)] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:border-[var(--accent-primary)] rounded-xl"
+                className="h-11 rounded-xl border-[rgba(255,255,255,0.1)] bg-[var(--bg-tertiary)] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:border-[var(--accent-primary)]"
               />
             </div>
 
@@ -374,7 +369,7 @@ export default function Dashboard() {
                 placeholder="What is this notebook about?"
                 value={newNotebookDescription}
                 onChange={(e) => setNewNotebookDescription(e.target.value)}
-                className="resize-none bg-[var(--bg-tertiary)] border-[rgba(255,255,255,0.1)] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:border-[var(--accent-primary)] rounded-xl"
+                className="resize-none rounded-xl border-[rgba(255,255,255,0.1)] bg-[var(--bg-tertiary)] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:border-[var(--accent-primary)]"
                 rows={3}
               />
             </div>
@@ -391,14 +386,14 @@ export default function Dashboard() {
             <Button
               onClick={createNotebook}
               disabled={creating || !newNotebookName.trim()}
-              className="rounded-xl bg-[var(--accent-primary)] hover:bg-[var(--accent-primary)]/90 text-white btn-hover"
+              className="btn-hover rounded-xl bg-[var(--accent-primary)] text-white hover:bg-[var(--accent-primary)]/90"
             >
-              {creating && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              {creating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Create Notebook
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
-  )
+  );
 }

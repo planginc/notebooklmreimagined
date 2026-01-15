@@ -1,30 +1,32 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { createClient } from '@supabase/supabase-js';
+import { NextRequest, NextResponse } from 'next/server';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
+);
 
 async function verifyAccess(request: NextRequest, notebookId: string) {
-  const authHeader = request.headers.get('authorization')
-  if (!authHeader) return null
+  const authHeader = request.headers.get('authorization');
+  if (!authHeader) return null;
 
-  const token = authHeader.replace('Bearer ', '')
-  const { data: { user } } = await supabase.auth.getUser(token)
+  const token = authHeader.replace('Bearer ', '');
+  const {
+    data: { user },
+  } = await supabase.auth.getUser(token);
 
-  if (!user) return null
+  if (!user) return null;
 
   const { data: notebook } = await supabase
     .from('notebooks')
     .select('id')
     .eq('id', notebookId)
     .eq('user_id', user.id)
-    .single()
+    .single();
 
-  if (!notebook) return null
+  if (!notebook) return null;
 
-  return user
+  return user;
 }
 
 export async function GET(
@@ -32,11 +34,11 @@ export async function GET(
   { params }: { params: Promise<{ id: string; noteId: string }> }
 ) {
   try {
-    const { id: notebookId, noteId } = await params
-    const user = await verifyAccess(request, notebookId)
+    const { id: notebookId, noteId } = await params;
+    const user = await verifyAccess(request, notebookId);
 
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { data: note } = await supabase
@@ -44,16 +46,16 @@ export async function GET(
       .select('*')
       .eq('id', noteId)
       .eq('notebook_id', notebookId)
-      .single()
+      .single();
 
     if (!note) {
-      return NextResponse.json({ error: 'Note not found' }, { status: 404 })
+      return NextResponse.json({ error: 'Note not found' }, { status: 404 });
     }
 
-    return NextResponse.json({ data: note })
+    return NextResponse.json({ data: note });
   } catch (error) {
-    console.error('Get note error:', error)
-    return NextResponse.json({ error: 'Failed to get note' }, { status: 500 })
+    console.error('Get note error:', error);
+    return NextResponse.json({ error: 'Failed to get note' }, { status: 500 });
   }
 }
 
@@ -62,26 +64,26 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string; noteId: string }> }
 ) {
   try {
-    const { id: notebookId, noteId } = await params
-    const user = await verifyAccess(request, notebookId)
+    const { id: notebookId, noteId } = await params;
+    const user = await verifyAccess(request, notebookId);
 
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const body = await request.json()
-    const updateData: Record<string, unknown> = {}
+    const body = await request.json();
+    const updateData: Record<string, unknown> = {};
 
-    if (body.title !== undefined) updateData.title = body.title
-    if (body.content !== undefined) updateData.content = body.content
-    if (body.tags !== undefined) updateData.tags = body.tags
-    if (body.is_pinned !== undefined) updateData.is_pinned = body.is_pinned
+    if (body.title !== undefined) updateData.title = body.title;
+    if (body.content !== undefined) updateData.content = body.content;
+    if (body.tags !== undefined) updateData.tags = body.tags;
+    if (body.is_pinned !== undefined) updateData.is_pinned = body.is_pinned;
 
     if (Object.keys(updateData).length === 0) {
-      return NextResponse.json({ error: 'No fields to update' }, { status: 400 })
+      return NextResponse.json({ error: 'No fields to update' }, { status: 400 });
     }
 
-    updateData.updated_at = new Date().toISOString()
+    updateData.updated_at = new Date().toISOString();
 
     const { data: note, error } = await supabase
       .from('notes')
@@ -89,16 +91,16 @@ export async function PATCH(
       .eq('id', noteId)
       .eq('notebook_id', notebookId)
       .select()
-      .single()
+      .single();
 
     if (error || !note) {
-      return NextResponse.json({ error: 'Failed to update note' }, { status: 400 })
+      return NextResponse.json({ error: 'Failed to update note' }, { status: 400 });
     }
 
-    return NextResponse.json({ data: note })
+    return NextResponse.json({ data: note });
   } catch (error) {
-    console.error('Update note error:', error)
-    return NextResponse.json({ error: 'Failed to update note' }, { status: 500 })
+    console.error('Update note error:', error);
+    return NextResponse.json({ error: 'Failed to update note' }, { status: 500 });
   }
 }
 
@@ -107,26 +109,26 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string; noteId: string }> }
 ) {
   try {
-    const { id: notebookId, noteId } = await params
-    const user = await verifyAccess(request, notebookId)
+    const { id: notebookId, noteId } = await params;
+    const user = await verifyAccess(request, notebookId);
 
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { error } = await supabase
       .from('notes')
       .delete()
       .eq('id', noteId)
-      .eq('notebook_id', notebookId)
+      .eq('notebook_id', notebookId);
 
     if (error) {
-      return NextResponse.json({ error: 'Failed to delete note' }, { status: 400 })
+      return NextResponse.json({ error: 'Failed to delete note' }, { status: 400 });
     }
 
-    return NextResponse.json({ data: { deleted: true, id: noteId } })
+    return NextResponse.json({ data: { deleted: true, id: noteId } });
   } catch (error) {
-    console.error('Delete note error:', error)
-    return NextResponse.json({ error: 'Failed to delete note' }, { status: 500 })
+    console.error('Delete note error:', error);
+    return NextResponse.json({ error: 'Failed to delete note' }, { status: 500 });
   }
 }

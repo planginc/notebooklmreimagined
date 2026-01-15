@@ -1,12 +1,14 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { Copy, Check, ChevronDown, ChevronRight, Key, ArrowLeft } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import Link from "next/link";
+import { Copy, Check, ChevronDown, ChevronRight, Key, ArrowLeft } from 'lucide-react';
+import Link from 'next/link';
+import { useState } from 'react';
+
+import { Button } from '@/components/ui/button';
+
 
 interface EndpointProps {
-  method: "GET" | "POST" | "PATCH" | "DELETE";
+  method: 'GET' | 'POST' | 'PATCH' | 'DELETE';
   path: string;
   description: string;
   requestBody?: string;
@@ -15,10 +17,10 @@ interface EndpointProps {
 }
 
 const methodColors = {
-  GET: "bg-[var(--success)]/20 text-[var(--success)] border-[var(--success)]/30",
-  POST: "bg-[var(--info)]/20 text-[var(--info)] border-[var(--info)]/30",
-  PATCH: "bg-[var(--warning)]/20 text-[var(--warning)] border-[var(--warning)]/30",
-  DELETE: "bg-[var(--error)]/20 text-[var(--error)] border-[var(--error)]/30",
+  GET: 'bg-[var(--success)]/20 text-[var(--success)] border-[var(--success)]/30',
+  POST: 'bg-[var(--info)]/20 text-[var(--info)] border-[var(--info)]/30',
+  PATCH: 'bg-[var(--warning)]/20 text-[var(--warning)] border-[var(--warning)]/30',
+  DELETE: 'bg-[var(--error)]/20 text-[var(--error)] border-[var(--error)]/30',
 };
 
 function CopyButton({ text }: { text: string }) {
@@ -33,7 +35,7 @@ function CopyButton({ text }: { text: string }) {
   return (
     <button
       onClick={handleCopy}
-      className="absolute top-2 right-2 p-1.5 rounded bg-[var(--bg-surface)] hover:bg-[var(--bg-tertiary)] transition-colors"
+      className="absolute top-2 right-2 rounded bg-[var(--bg-surface)] p-1.5 transition-colors hover:bg-[var(--bg-tertiary)]"
       title="Copy to clipboard"
     >
       {copied ? (
@@ -45,10 +47,10 @@ function CopyButton({ text }: { text: string }) {
   );
 }
 
-function CodeBlock({ code, language = "bash" }: { code: string; language?: string }) {
+function CodeBlock({ code, language = 'bash' }: { code: string; language?: string }) {
   return (
     <div className="relative">
-      <pre className="bg-[var(--bg-secondary)] border border-[var(--border)] rounded-lg p-4 overflow-x-auto text-sm text-[var(--text-secondary)]">
+      <pre className="overflow-x-auto rounded-lg border border-[var(--border)] bg-[var(--bg-secondary)] p-4 text-sm text-[var(--text-secondary)]">
         <code>{code}</code>
       </pre>
       <CopyButton text={code} />
@@ -56,10 +58,17 @@ function CodeBlock({ code, language = "bash" }: { code: string; language?: strin
   );
 }
 
-function Endpoint({ method, path, description, requestBody, responseExample, notes }: EndpointProps) {
+function Endpoint({
+  method,
+  path,
+  description,
+  requestBody,
+  responseExample,
+  notes,
+}: EndpointProps) {
   const [expanded, setExpanded] = useState(false);
 
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL || "https://notebooklm-api.vercel.app";
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://notebooklm-api.vercel.app';
   const fullPath = `${baseUrl}${path}`;
 
   let curlCommand = `curl -X ${method} "${fullPath}" \\
@@ -72,44 +81,48 @@ function Endpoint({ method, path, description, requestBody, responseExample, not
   }
 
   return (
-    <div className="border border-[var(--border)] rounded-lg mb-4 overflow-hidden">
+    <div className="mb-4 overflow-hidden rounded-lg border border-[var(--border)]">
       <button
         onClick={() => setExpanded(!expanded)}
-        className="w-full px-4 py-3 flex items-center gap-3 hover:bg-[var(--bg-tertiary)]/50 transition-colors text-left"
+        className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-[var(--bg-tertiary)]/50"
       >
         {expanded ? (
-          <ChevronDown className="h-4 w-4 text-[var(--text-tertiary)] flex-shrink-0" />
+          <ChevronDown className="h-4 w-4 flex-shrink-0 text-[var(--text-tertiary)]" />
         ) : (
-          <ChevronRight className="h-4 w-4 text-[var(--text-tertiary)] flex-shrink-0" />
+          <ChevronRight className="h-4 w-4 flex-shrink-0 text-[var(--text-tertiary)]" />
         )}
-        <span className={`px-2 py-0.5 text-xs font-mono font-semibold rounded border ${methodColors[method]}`}>
+        <span
+          className={`rounded border px-2 py-0.5 font-mono text-xs font-semibold ${methodColors[method]}`}
+        >
           {method}
         </span>
-        <code className="text-[var(--text-secondary)] font-mono text-sm">{path}</code>
-        <span className="text-[var(--text-tertiary)] text-sm ml-auto">{description}</span>
+        <code className="font-mono text-sm text-[var(--text-secondary)]">{path}</code>
+        <span className="ml-auto text-sm text-[var(--text-tertiary)]">{description}</span>
       </button>
 
       {expanded && (
-        <div className="px-4 pb-4 space-y-4 border-t border-[var(--border)] pt-4">
-          {notes && (
-            <p className="text-sm text-[var(--text-secondary)]">{notes}</p>
-          )}
+        <div className="space-y-4 border-t border-[var(--border)] px-4 pt-4 pb-4">
+          {notes && <p className="text-sm text-[var(--text-secondary)]">{notes}</p>}
 
           <div>
-            <h4 className="text-sm font-medium text-[var(--text-secondary)] mb-2">cURL</h4>
+            <h4 className="mb-2 text-sm font-medium text-[var(--text-secondary)]">cURL</h4>
             <CodeBlock code={curlCommand} />
           </div>
 
           {requestBody && (
             <div>
-              <h4 className="text-sm font-medium text-[var(--text-secondary)] mb-2">Request Body</h4>
+              <h4 className="mb-2 text-sm font-medium text-[var(--text-secondary)]">
+                Request Body
+              </h4>
               <CodeBlock code={JSON.stringify(JSON.parse(requestBody), null, 2)} language="json" />
             </div>
           )}
 
           {responseExample && (
             <div>
-              <h4 className="text-sm font-medium text-[var(--text-secondary)] mb-2">Response Example</h4>
+              <h4 className="mb-2 text-sm font-medium text-[var(--text-secondary)]">
+                Response Example
+              </h4>
               <CodeBlock code={responseExample} language="json" />
             </div>
           )}
@@ -119,10 +132,20 @@ function Endpoint({ method, path, description, requestBody, responseExample, not
   );
 }
 
-function Section({ title, children, id }: { title: string; children: React.ReactNode; id: string }) {
+function Section({
+  title,
+  children,
+  id,
+}: {
+  title: string;
+  children: React.ReactNode;
+  id: string;
+}) {
   return (
     <section id={id} className="mb-12 scroll-mt-20">
-      <h2 className="text-xl font-semibold text-[var(--text-primary)] mb-4 pb-2 border-b border-[var(--border)]">{title}</h2>
+      <h2 className="mb-4 border-b border-[var(--border)] pb-2 text-xl font-semibold text-[var(--text-primary)]">
+        {title}
+      </h2>
       {children}
     </section>
   );
@@ -130,29 +153,29 @@ function Section({ title, children, id }: { title: string; children: React.React
 
 export default function ApiDocsPage() {
   const sections = [
-    { id: "authentication", title: "Authentication" },
-    { id: "notebooks", title: "Notebooks" },
-    { id: "sources", title: "Sources" },
-    { id: "chat", title: "Chat" },
-    { id: "global-chat", title: "Global Chat" },
-    { id: "audio", title: "Audio Overviews" },
-    { id: "video", title: "Video Overviews" },
-    { id: "research", title: "Deep Research" },
-    { id: "study", title: "Study Materials" },
-    { id: "notes", title: "Notes" },
-    { id: "studio", title: "Studio Outputs" },
-    { id: "api-keys", title: "API Key Management" },
+    { id: 'authentication', title: 'Authentication' },
+    { id: 'notebooks', title: 'Notebooks' },
+    { id: 'sources', title: 'Sources' },
+    { id: 'chat', title: 'Chat' },
+    { id: 'global-chat', title: 'Global Chat' },
+    { id: 'audio', title: 'Audio Overviews' },
+    { id: 'video', title: 'Video Overviews' },
+    { id: 'research', title: 'Deep Research' },
+    { id: 'study', title: 'Study Materials' },
+    { id: 'notes', title: 'Notes' },
+    { id: 'studio', title: 'Studio Outputs' },
+    { id: 'api-keys', title: 'API Key Management' },
   ];
 
   return (
     <div className="min-h-screen bg-[var(--bg-primary)]">
       {/* Header */}
       <header className="sticky top-0 z-50 border-b border-[var(--border)] bg-[var(--bg-primary)]/95 backdrop-blur">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
           <div className="flex items-center gap-4">
             <Link href="/settings">
               <Button variant="ghost" size="sm">
-                <ArrowLeft className="h-4 w-4 mr-2" />
+                <ArrowLeft className="mr-2 h-4 w-4" />
                 Back to Settings
               </Button>
             </Link>
@@ -160,23 +183,25 @@ export default function ApiDocsPage() {
           </div>
           <Link href="/settings">
             <Button variant="outline" size="sm">
-              <Key className="h-4 w-4 mr-2" />
+              <Key className="mr-2 h-4 w-4" />
               Manage API Keys
             </Button>
           </Link>
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-6 py-8 flex gap-8">
+      <div className="mx-auto flex max-w-7xl gap-8 px-6 py-8">
         {/* Sidebar */}
-        <nav className="w-56 flex-shrink-0 hidden lg:block">
+        <nav className="hidden w-56 flex-shrink-0 lg:block">
           <div className="sticky top-24 space-y-1">
-            <p className="text-xs font-semibold text-[var(--text-tertiary)] uppercase tracking-wider mb-3">Contents</p>
+            <p className="mb-3 text-xs font-semibold tracking-wider text-[var(--text-tertiary)] uppercase">
+              Contents
+            </p>
             {sections.map((section) => (
               <a
                 key={section.id}
                 href={`#${section.id}`}
-                className="block px-3 py-1.5 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)]/50 rounded transition-colors"
+                className="block rounded px-3 py-1.5 text-sm text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-tertiary)]/50 hover:text-[var(--text-primary)]"
               >
                 {section.title}
               </a>
@@ -185,35 +210,52 @@ export default function ApiDocsPage() {
         </nav>
 
         {/* Main Content */}
-        <main className="flex-1 min-w-0">
+        <main className="min-w-0 flex-1">
           {/* Authentication */}
           <Section id="authentication" title="Authentication">
-            <div className="prose prose-invert max-w-none mb-6">
+            <div className="prose prose-invert mb-6 max-w-none">
               <p className="text-[var(--text-secondary)]">
-                All API requests require authentication via an API key. Include your API key in the <code className="text-[var(--accent-primary)]">X-API-Key</code> header.
+                All API requests require authentication via an API key. Include your API key in the{' '}
+                <code className="text-[var(--accent-primary)]">X-API-Key</code> header.
               </p>
             </div>
 
-            <div className="bg-[var(--bg-secondary)] border border-[var(--border)] rounded-lg p-4 mb-6">
-              <h4 className="text-sm font-medium text-[var(--text-secondary)] mb-3">Example Request</h4>
-              <CodeBlock code={`curl -X GET "https://notebooklm-api.vercel.app/api/v1/notebooks" \\
-  -H "X-API-Key: nb_live_your_api_key_here"`} />
+            <div className="mb-6 rounded-lg border border-[var(--border)] bg-[var(--bg-secondary)] p-4">
+              <h4 className="mb-3 text-sm font-medium text-[var(--text-secondary)]">
+                Example Request
+              </h4>
+              <CodeBlock
+                code={`curl -X GET "https://notebooklm-api.vercel.app/api/v1/notebooks" \\
+  -H "X-API-Key: nb_live_your_api_key_here"`}
+              />
             </div>
 
-            <div className="bg-[var(--warning)]/10 border border-[var(--warning)]/30 rounded-lg p-4">
-              <h4 className="text-[var(--accent-primary)] font-medium mb-2">Important Notes</h4>
-              <ul className="text-sm text-[var(--text-secondary)] space-y-1">
-                <li>API keys start with <code className="text-[var(--accent-primary)]">nb_live_</code></li>
+            <div className="rounded-lg border border-[var(--warning)]/30 bg-[var(--warning)]/10 p-4">
+              <h4 className="mb-2 font-medium text-[var(--accent-primary)]">Important Notes</h4>
+              <ul className="space-y-1 text-sm text-[var(--text-secondary)]">
+                <li>
+                  API keys start with <code className="text-[var(--accent-primary)]">nb_live_</code>
+                </li>
                 <li>Keep your API key secret - never expose it in client-side code</li>
                 <li>API keys have rate limits (default: 60 req/min, 10,000 req/day)</li>
-                <li>Create and manage API keys in <Link href="/settings" className="text-[var(--accent-primary)] hover:underline">Settings</Link></li>
+                <li>
+                  Create and manage API keys in{' '}
+                  <Link href="/settings" className="text-[var(--accent-primary)] hover:underline">
+                    Settings
+                  </Link>
+                </li>
               </ul>
             </div>
 
             <div className="mt-6">
-              <h3 className="text-lg font-medium text-[var(--text-primary)] mb-3">Response Format</h3>
-              <p className="text-[var(--text-secondary)] text-sm mb-3">All responses follow this format:</p>
-              <CodeBlock code={`{
+              <h3 className="mb-3 text-lg font-medium text-[var(--text-primary)]">
+                Response Format
+              </h3>
+              <p className="mb-3 text-sm text-[var(--text-secondary)]">
+                All responses follow this format:
+              </p>
+              <CodeBlock
+                code={`{
   "data": { ... },
   "usage": {
     "input_tokens": 1500,
@@ -222,13 +264,17 @@ export default function ApiDocsPage() {
     "model_used": "gemini-2.0-flash"
   },
   "meta": {}
-}`} language="json" />
+}`}
+                language="json"
+              />
             </div>
           </Section>
 
           {/* Notebooks */}
           <Section id="notebooks" title="Notebooks">
-            <p className="text-[var(--text-secondary)] text-sm mb-4">Manage your notebooks - containers for sources, chats, and generated content.</p>
+            <p className="mb-4 text-sm text-[var(--text-secondary)]">
+              Manage your notebooks - containers for sources, chats, and generated content.
+            </p>
 
             <Endpoint
               method="GET"
@@ -288,7 +334,9 @@ export default function ApiDocsPage() {
 
           {/* Sources */}
           <Section id="sources" title="Sources">
-            <p className="text-[var(--text-secondary)] text-sm mb-4">Add and manage sources (documents, URLs, text, YouTube videos) in a notebook.</p>
+            <p className="mb-4 text-sm text-[var(--text-secondary)]">
+              Add and manage sources (documents, URLs, text, YouTube videos) in a notebook.
+            </p>
 
             <Endpoint
               method="GET"
@@ -371,7 +419,10 @@ export default function ApiDocsPage() {
 
           {/* Chat */}
           <Section id="chat" title="Chat">
-            <p className="text-[var(--text-secondary)] text-sm mb-4">Chat with your sources using RAG (Retrieval-Augmented Generation). Responses include citations.</p>
+            <p className="mb-4 text-sm text-[var(--text-secondary)]">
+              Chat with your sources using RAG (Retrieval-Augmented Generation). Responses include
+              citations.
+            </p>
 
             <Endpoint
               method="POST"
@@ -446,11 +497,14 @@ export default function ApiDocsPage() {
 
           {/* Global Chat */}
           <Section id="global-chat" title="Global Chat">
-            <p className="text-[var(--text-secondary)] text-sm mb-4">Query across multiple notebooks at once. Search your entire knowledge base without knowing which notebook contains the information.</p>
+            <p className="mb-4 text-sm text-[var(--text-secondary)]">
+              Query across multiple notebooks at once. Search your entire knowledge base without
+              knowing which notebook contains the information.
+            </p>
 
-            <div className="bg-[var(--accent-primary)]/10 border border-[var(--accent-primary)]/30 rounded-lg p-4 mb-6">
-              <h4 className="text-[var(--accent-primary)] font-medium mb-2">Use Cases</h4>
-              <ul className="text-sm text-[var(--text-secondary)] space-y-1">
+            <div className="mb-6 rounded-lg border border-[var(--accent-primary)]/30 bg-[var(--accent-primary)]/10 p-4">
+              <h4 className="mb-2 font-medium text-[var(--accent-primary)]">Use Cases</h4>
+              <ul className="space-y-1 text-sm text-[var(--text-secondary)]">
                 <li>• Find information across your entire knowledge base</li>
                 <li>• Compare information from different notebooks</li>
                 <li>• Search for a topic without knowing which notebook contains it</li>
@@ -527,7 +581,9 @@ export default function ApiDocsPage() {
 
           {/* Audio */}
           <Section id="audio" title="Audio Overviews">
-            <p className="text-[var(--text-secondary)] text-sm mb-4">Generate podcast-style audio summaries of your sources.</p>
+            <p className="mb-4 text-sm text-[var(--text-secondary)]">
+              Generate podcast-style audio summaries of your sources.
+            </p>
 
             <Endpoint
               method="POST"
@@ -594,7 +650,9 @@ export default function ApiDocsPage() {
 
           {/* Video */}
           <Section id="video" title="Video Overviews">
-            <p className="text-[var(--text-secondary)] text-sm mb-4">Generate video summaries of your sources (uses Veo).</p>
+            <p className="mb-4 text-sm text-[var(--text-secondary)]">
+              Generate video summaries of your sources (uses Veo).
+            </p>
 
             <Endpoint
               method="POST"
@@ -646,7 +704,9 @@ export default function ApiDocsPage() {
 
           {/* Research */}
           <Section id="research" title="Deep Research">
-            <p className="text-[var(--text-secondary)] text-sm mb-4">Start deep research tasks that search the web and generate comprehensive reports.</p>
+            <p className="mb-4 text-sm text-[var(--text-secondary)]">
+              Start deep research tasks that search the web and generate comprehensive reports.
+            </p>
 
             <Endpoint
               method="POST"
@@ -699,7 +759,9 @@ export default function ApiDocsPage() {
 
           {/* Study */}
           <Section id="study" title="Study Materials">
-            <p className="text-[var(--text-secondary)] text-sm mb-4">Generate flashcards, quizzes, study guides, and FAQs from your sources.</p>
+            <p className="mb-4 text-sm text-[var(--text-secondary)]">
+              Generate flashcards, quizzes, study guides, and FAQs from your sources.
+            </p>
 
             <Endpoint
               method="POST"
@@ -777,7 +839,9 @@ export default function ApiDocsPage() {
 
           {/* Notes */}
           <Section id="notes" title="Notes">
-            <p className="text-[var(--text-secondary)] text-sm mb-4">Create and manage notes within a notebook. You can also save chat responses as notes.</p>
+            <p className="mb-4 text-sm text-[var(--text-secondary)]">
+              Create and manage notes within a notebook. You can also save chat responses as notes.
+            </p>
 
             <Endpoint
               method="GET"
@@ -834,7 +898,9 @@ export default function ApiDocsPage() {
 
           {/* Studio */}
           <Section id="studio" title="Studio Outputs">
-            <p className="text-[var(--text-secondary)] text-sm mb-4">Generate structured outputs: data tables, reports, slide decks, and infographics.</p>
+            <p className="mb-4 text-sm text-[var(--text-secondary)]">
+              Generate structured outputs: data tables, reports, slide decks, and infographics.
+            </p>
 
             <Endpoint
               method="GET"
@@ -953,13 +1019,16 @@ export default function ApiDocsPage() {
 
           {/* API Key Management */}
           <Section id="api-keys" title="API Key Management">
-            <p className="text-[var(--text-secondary)] text-sm mb-4">Manage your API keys. These endpoints require JWT authentication (not API key).</p>
+            <p className="mb-4 text-sm text-[var(--text-secondary)]">
+              Manage your API keys. These endpoints require JWT authentication (not API key).
+            </p>
 
-            <div className="bg-[var(--warning)]/10 border border-[var(--warning)]/30 rounded-lg p-4 mb-6">
-              <h4 className="text-[var(--accent-primary)] font-medium mb-2">Note</h4>
+            <div className="mb-6 rounded-lg border border-[var(--warning)]/30 bg-[var(--warning)]/10 p-4">
+              <h4 className="mb-2 font-medium text-[var(--accent-primary)]">Note</h4>
               <p className="text-sm text-[var(--text-secondary)]">
-                API key management endpoints require JWT authentication (Bearer token) and cannot be accessed with an API key.
-                This prevents API keys from being used to create or modify other API keys.
+                API key management endpoints require JWT authentication (Bearer token) and cannot be
+                accessed with an API key. This prevents API keys from being used to create or modify
+                other API keys.
               </p>
             </div>
 
@@ -990,11 +1059,7 @@ export default function ApiDocsPage() {
               notes="The full key is only returned once during creation. Store it securely!"
             />
 
-            <Endpoint
-              method="GET"
-              path="/api/v1/api-keys"
-              description="List all your API keys"
-            />
+            <Endpoint method="GET" path="/api/v1/api-keys" description="List all your API keys" />
 
             <Endpoint
               method="GET"
@@ -1049,12 +1114,12 @@ export default function ApiDocsPage() {
           </Section>
 
           {/* Footer */}
-          <div className="mt-16 pt-8 border-t border-[var(--border)] text-center">
-            <p className="text-[var(--text-tertiary)] text-sm">
-              Need help? Check the{" "}
+          <div className="mt-16 border-t border-[var(--border)] pt-8 text-center">
+            <p className="text-sm text-[var(--text-tertiary)]">
+              Need help? Check the{' '}
               <Link href="/settings" className="text-[var(--accent-primary)] hover:underline">
                 Settings page
-              </Link>{" "}
+              </Link>{' '}
               to create and manage your API keys.
             </p>
           </div>
