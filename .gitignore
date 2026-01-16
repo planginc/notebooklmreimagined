@@ -40,3 +40,6 @@ htmlcov/
 *.bak
 *.tmp
 .cache/
+
+# Private/local folders
+youtube/
