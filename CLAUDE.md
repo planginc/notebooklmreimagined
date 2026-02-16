@@ -16,13 +16,76 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
    - Any errors encountered and their fixes
 4. After compacting, immediately continue the current task
 
-This ensures conversations never hit context limits and work continues uninterrupted.
-
 ## Project Overview
 
 NotebookLM Reimagined is an API-first research intelligence platform—Google's NotebookLM, reimagined for developers.
 
 **Architecture**: `Next.js (Frontend) → FastAPI (Backend) → Supabase (Auth + DB + Storage) → Gemini API`
+
+## Development Commands
+
+### Backend (FastAPI)
+```bash
+cd backend
+python -m venv venv && source venv/bin/activate
+pip install -r requirements.txt
+uvicorn app.main:app --reload --port 8000
+```
+Backend runs at `http://localhost:8000`. API docs at `/docs`, ReDoc at `/redoc`.
+
+### Frontend (Next.js)
+```bash
+cd frontend
+npm install
+npm run dev          # Dev server (http://localhost:3000)
+npm run build        # Production build
+npm run lint         # ESLint check
+npm run lint:fix     # Auto-fix lint issues
+npm run format       # Prettier format
+npm run format:check # Check formatting
+npm run type-check   # TypeScript type checking
+npm run analyze      # Bundle size analysis
+```
+
+Pre-commit hooks (Husky + lint-staged) auto-run ESLint + Prettier on staged `.ts/.tsx/.js/.jsx` files.
+
+### Environment Variables
+
+**Backend** (`backend/.env`):
+```bash
+SUPABASE_URL=https://xxx.supabase.co
+SUPABASE_ANON_KEY=eyJ...
+SUPABASE_SERVICE_ROLE_KEY=eyJ...
+GOOGLE_API_KEY=AIza...
+ATLASCLOUD_API_KEY=...  # Optional, for Wan 2.5 video
+```
+
+**Frontend** (`frontend/.env.local`):
+```bash
+NEXT_PUBLIC_SUPABASE_URL=https://xxx.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
+SUPABASE_SERVICE_ROLE_KEY=eyJ...  # Server-side only
+GOOGLE_API_KEY=AIza...            # Server-side only (for Next.js API routes)
+NEXT_PUBLIC_API_URL=http://localhost:8000  # FastAPI backend URL
+```
+
+## Architecture: Dual API Layer
+
+**Critical**: This project has TWO API layers that must stay in sync:
+
+1. **FastAPI backend** (`backend/app/routers/`) — The primary API, deployed to Vercel as a Python serverless function via `backend/api/index.py` + `backend/vercel.json`. Used by external consumers and API key auth.
+
+2. **Next.js API routes** (`frontend/src/app/api/`) — Frontend-side API routes that talk directly to Supabase and Gemini. Used by the web UI via JWT auth.
+
+Both layers implement similar logic (chat, sources, audio, etc.). When fixing bugs in one layer, check if the same fix is needed in the other.
+
+### Auth: Dual Authentication
+
+The FastAPI backend (`backend/app/services/auth.py`) supports two auth methods:
+- **JWT** (Supabase Auth) — `Authorization: Bearer <token>` — Used by the web frontend
+- **API Key** — `X-API-Key: nb_live_...` — Used by external consumers (n8n, Zapier, etc.)
+
+Auth priority: API key is checked first, then JWT. API keys have scopes, rate limits, and IP allowlists.
 
 ## Critical: Keeping Code in Sync
 
@@ -39,104 +102,70 @@ NotebookLM Reimagined is an API-first research intelligence platform—Google's 
    source_guide.get("summary")
    ```
 3. **Update documentation** - Keep `/docs` page in sync with API changes
-4. **Register new routers** - Don't forget to add to `main.py` imports AND `include_router()` calls
+4. **Register new routers** - Add to `backend/app/main.py` imports AND `include_router()` calls
 
-Common files that share patterns (update ALL when fixing bugs):
-- `chat.py`, `study.py`, `audio.py`, `video.py`, `studio.py`, `global_chat.py` - all have source content extraction
+Common files that share source content extraction patterns (update ALL when fixing bugs):
+- **Backend**: `chat.py`, `study.py`, `audio.py`, `video.py`, `studio.py`, `global_chat.py`
+- **Frontend**: `frontend/src/app/api/notebooks/[id]/chat/route.ts` and similar API routes
 
-## Development with Supabase MCP
-
-This project is designed to be built using Supabase MCP. Use these commands for direct database/infrastructure management:
-
-```
-mcp__supabase__list_projects              # Find project ID
-mcp__supabase__list_tables                # View current schema
-mcp__supabase__apply_migration            # Create/modify tables (for DDL)
-mcp__supabase__execute_sql                # Run queries (for DML)
-mcp__supabase__generate_typescript_types  # Generate frontend types
-```
-
-**No Docker, Redis, or Celery required** - Supabase handles all infrastructure.
-
-## UI Testing with Chrome MCP
-
-Use the built-in Chrome MCP tools to visually verify UI changes and test frontend functionality:
+## Key Directory Structure
 
 ```
-mcp__claude-in-chrome__tabs_context_mcp   # Get available browser tabs
-mcp__claude-in-chrome__navigate           # Navigate to URLs
-mcp__claude-in-chrome__computer           # Take screenshots, click, type
-mcp__claude-in-chrome__read_page          # Get accessibility tree of page elements
-mcp__claude-in-chrome__find               # Find elements by description
-mcp__claude-in-chrome__form_input         # Fill form fields
-```
+backend/
+├── api/index.py           # Vercel serverless entry point (wraps FastAPI via Mangum)
+├── vercel.json            # Vercel routing config
+├── app/
+│   ├── main.py            # FastAPI app, middleware, router registration
+│   ├── config.py          # Settings via pydantic-settings (reads .env)
+│   ├── routers/           # 13 routers: notebooks, sources, chat, audio, video, research, study, notes, api_keys, global_chat, studio, export, profile
+│   ├── services/          # gemini.py, auth.py, supabase_client.py, persona_utils.py, atlascloud_video.py
+│   └── models/schemas.py  # Pydantic request/response models
 
-Always verify UI changes visually after implementing frontend components.
+frontend/
+├── src/
+│   ├── app/
+│   │   ├── api/           # Next.js API routes (parallel to FastAPI backend)
+│   │   ├── auth/          # Login/register pages
+│   │   ├── notebooks/[id]/ # Three-panel notebook view
+│   │   └── page.tsx       # Dashboard
+│   ├── components/        # chat/, studio/, study/, sources/, dashboard/, notebook/, panels/, ui/
+│   └── lib/               # api.ts (typed API client), supabase.ts, hooks, types
+
+supabase/                  # Database setup files
+├── schema.sql             # Full table schema
+├── rls_policies.sql       # Row-level security policies
+└── storage.sql            # Storage bucket config
+
+mcp-server/                # MCP server for tool integration
+open-notebook/             # Alternative notebook implementation
+```
 
 ## Technology Stack
 
 | Layer | Technology |
 |-------|------------|
-| Database | Supabase PostgreSQL |
-| Auth | Supabase Auth (JWT + RLS) |
+| Database | Supabase PostgreSQL + Row Level Security |
+| Auth | Supabase Auth (JWT) + Custom API Keys |
 | File Storage | Supabase Storage |
-| API | FastAPI (Python) |
-| Background Jobs | Supabase Edge Functions |
-| Realtime Updates | Supabase Realtime |
+| Backend API | FastAPI (Python 3.11+), deployed as Vercel serverless |
+| Frontend | Next.js 16, React 19, TypeScript, Tailwind v4, shadcn/ui |
+| State | @tanstack/react-query |
 | AI/RAG | Gemini API (File Search, TTS, Veo, Deep Research) |
-| Frontend | Next.js 14+ with shadcn/ui + Tailwind |
 
-## Database Schema (11 tables)
+## Gemini Models Reference
 
-- **profiles** - Extends Supabase Auth users
-- **notebooks** - Contains `file_search_store_id` linking to Gemini File Search Store
-- **sources** - Documents stored in Supabase Storage, indexed in Gemini File Search
-- **chat_sessions** / **chat_messages** - Conversations with citations
-- **audio_overviews** / **video_overviews** - Generation jobs (subscribe via Realtime)
-- **research_tasks** - Deep Research jobs
-- **notes** - User notes and saved responses
-- **usage_logs** - Cost tracking per operation
+| Feature | Model |
+|---------|-------|
+| Chat (fast) | gemini-2.5-flash |
+| Chat (quality) | gemini-3-pro |
+| Frontend chat | gemini-2.0-flash-exp (in Next.js API routes) |
+| Audio scripts | gemini-2.5-pro |
+| TTS | gemini-2.5-pro-tts-preview |
+| Video | veo-3.1-fast-preview |
+| Deep Research | deep-research-pro-preview |
 
-All tables require RLS policies for user data isolation.
+## Response Format Convention
 
-## Planned Directory Structure
-
-```
-backend/
-├── app/
-│   ├── main.py              # FastAPI entry point
-│   ├── config.py
-│   ├── routers/             # notebooks, sources, chat, audio, video, research, study
-│   ├── services/            # gemini, file_search, audio_gen, video_gen
-│   └── models/schemas.py    # Pydantic models
-└── requirements.txt
-
-frontend/
-├── app/
-│   ├── layout.tsx
-│   ├── page.tsx             # Dashboard
-│   ├── auth/                # Login/register
-│   └── notebooks/[id]/      # Three-panel notebook view
-├── components/              # sources/, chat/, studio/, ui/
-└── lib/                     # supabase.ts, api.ts
-```
-
-## Key Integration Patterns
-
-### Gemini File Search (RAG)
-Each notebook maps to a Gemini File Search Store—no custom vector database needed:
-```python
-# Create store on notebook creation
-store = genai.FileSearchStore.create(name=f"notebook_{notebook_id}")
-
-# Query with File Search tool
-response = model.generate_content(
-    contents=user_message,
-    tools=[genai.Tool.from_file_search(store_id=store.id)]
-)
-```
-
-### Response Format
 All API responses include cost transparency:
 ```json
 {
@@ -150,41 +179,29 @@ All API responses include cost transparency:
 }
 ```
 
-### Realtime Job Updates
-Long-running jobs (audio, video, research) update database tables; clients subscribe via Supabase Realtime.
+## Development with Supabase MCP
 
-## Gemini Models Reference
-
-| Feature | Model |
-|---------|-------|
-| Chat (fast) | gemini-2.5-flash |
-| Chat (quality) | gemini-3-pro |
-| Audio scripts | gemini-2.5-pro |
-| TTS | gemini-2.5-pro-tts-preview |
-| Video | veo-3.1-fast-preview |
-| Deep Research | deep-research-pro-preview |
-
-## Environment Variables
-
-```bash
-NEXT_PUBLIC_SUPABASE_URL=https://xxx.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
-SUPABASE_SERVICE_ROLE_KEY=eyJ...
-GOOGLE_API_KEY=AIza...
+Use these MCP commands for direct database/infrastructure management:
+```
+mcp__supabase__list_projects              # Find project ID
+mcp__supabase__list_tables                # View current schema
+mcp__supabase__apply_migration            # Create/modify tables (DDL)
+mcp__supabase__execute_sql                # Run queries (DML)
+mcp__supabase__generate_typescript_types  # Generate frontend types
 ```
 
-## MVP Implementation Order
+## UI Testing with Chrome MCP
 
-1. Database schema setup (use Supabase MCP)
-2. Notebooks CRUD endpoints
-3. Source upload (Storage → Gemini File Search)
-4. RAG Chat with citations
-5. Basic frontend (dashboard + three-panel notebook view)
-6. Audio Overview generation
-7. Deploy
+Use Chrome MCP tools to visually verify UI changes:
+```
+mcp__claude-in-chrome__navigate           # Navigate to URLs
+mcp__claude-in-chrome__computer           # Take screenshots, click, type
+mcp__claude-in-chrome__read_page          # Get accessibility tree
+mcp__claude-in-chrome__find               # Find elements by description
+```
 
 ## Core Specification Documents
 
 - `01_VISION_DOCUMENT.md` - High-level vision and philosophy
 - `02_PROJECT_SPECIFICATION.md` - Complete technical spec (schema, 40+ endpoints, features)
-- `IMPLEMENTATION_CHECKLIST.md` - Step-by-step implementation guide
+- `03_IMPLEMENTATION_GUIDE.md` - Step-by-step implementation guide
