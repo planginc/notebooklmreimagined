@@ -154,7 +154,7 @@ Content:
 ${truncatedContent}
 
 Generate ONLY the video prompt, nothing else. Make it vivid and visually descriptive.`,
-        'gemini-2.0-flash'
+        'gemini-2.5-flash'
       );
 
       const videoPrompt = promptResult.text.trim();

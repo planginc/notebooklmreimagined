@@ -25,8 +25,8 @@ if NEW_SDK_AVAILABLE:
 
 # Model pricing (per 1M tokens)
 MODEL_PRICING = {
-    "gemini-2.0-flash": {"input": 0.10, "output": 0.40},
-    "gemini-2.0-flash-lite": {"input": 0.075, "output": 0.30},
+    "gemini-2.5-flash": {"input": 0.10, "output": 0.40},
+    "gemini-2.5-flash-lite": {"input": 0.075, "output": 0.30},
     "gemini-2.5-pro": {"input": 1.25, "output": 10.0},
     "gemini-2.5-flash": {"input": 0.15, "output": 0.60},
 }
@@ -34,7 +34,7 @@ MODEL_PRICING = {
 
 def calculate_cost(model: str, input_tokens: int, output_tokens: int) -> float:
     """Calculate cost in USD for a given model and token counts."""
-    pricing = MODEL_PRICING.get(model, MODEL_PRICING["gemini-2.0-flash"])
+    pricing = MODEL_PRICING.get(model, MODEL_PRICING["gemini-2.5-flash"])
     input_cost = (input_tokens / 1_000_000) * pricing["input"]
     output_cost = (output_tokens / 1_000_000) * pricing["output"]
     return round(input_cost + output_cost, 6)
@@ -44,7 +44,7 @@ class GeminiService:
     def __init__(self):
         self.models = {}
 
-    def get_model(self, model_name: str = "gemini-2.0-flash"):
+    def get_model(self, model_name: str = "gemini-2.5-flash"):
         """Get or create a Gemini model instance."""
         if model_name not in self.models:
             self.models[model_name] = genai.GenerativeModel(model_name)
@@ -53,7 +53,7 @@ class GeminiService:
     async def generate_content(
         self,
         prompt: str,
-        model_name: str = "gemini-2.0-flash",
+        model_name: str = "gemini-2.5-flash",
         system_instruction: Optional[str] = None,
         temperature: float = 0.7,
     ) -> Dict[str, Any]:
@@ -87,7 +87,7 @@ class GeminiService:
         self,
         message: str,
         context: str,
-        model_name: str = "gemini-2.0-flash",
+        model_name: str = "gemini-2.5-flash",
         source_names: Optional[List[str]] = None,
         persona_instructions: Optional[str] = None,
     ) -> Dict[str, Any]:
@@ -124,7 +124,7 @@ Provide a well-cited response:"""
         )
 
     async def generate_summary(
-        self, content: str, model_name: str = "gemini-2.0-flash"
+        self, content: str, model_name: str = "gemini-2.5-flash"
     ) -> Dict[str, Any]:
         """Generate a summary of content."""
         prompt = f"""Analyze this content and provide:
@@ -148,7 +148,7 @@ Format your response as JSON:
         self,
         content: str,
         count: int = 10,
-        model_name: str = "gemini-2.0-flash",
+        model_name: str = "gemini-2.5-flash",
         persona_instructions: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Generate flashcards from content."""
@@ -174,7 +174,7 @@ Format as JSON array:
         self,
         content: str,
         question_count: int = 10,
-        model_name: str = "gemini-2.0-flash",
+        model_name: str = "gemini-2.5-flash",
         persona_instructions: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Generate a quiz from content."""
@@ -204,7 +204,7 @@ Format as JSON array:
     async def generate_study_guide(
         self,
         content: str,
-        model_name: str = "gemini-2.0-flash",
+        model_name: str = "gemini-2.5-flash",
         persona_instructions: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Generate a comprehensive study guide."""
@@ -236,7 +236,7 @@ Format as JSON:
         self,
         content: str,
         count: int = 10,
-        model_name: str = "gemini-2.0-flash",
+        model_name: str = "gemini-2.5-flash",
         persona_instructions: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Generate FAQ from content."""
@@ -457,7 +457,7 @@ Note: In production, this would use Deep Research API for real web search and an
         self,
         content: str,
         custom_instructions: Optional[str] = None,
-        model_name: str = "gemini-2.0-flash",
+        model_name: str = "gemini-2.5-flash",
         persona_instructions: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Generate a data table from content."""
@@ -491,7 +491,7 @@ Format as JSON:
         self,
         content: str,
         custom_instructions: Optional[str] = None,
-        model_name: str = "gemini-2.0-flash",
+        model_name: str = "gemini-2.5-flash",
         persona_instructions: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Generate a briefing document/report from content."""
@@ -527,7 +527,7 @@ Format as JSON:
         content: str,
         slide_count: int = 10,
         custom_instructions: Optional[str] = None,
-        model_name: str = "gemini-2.0-flash",
+        model_name: str = "gemini-2.5-flash",
         persona_instructions: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Generate a slide deck from content."""
@@ -564,7 +564,7 @@ Format as JSON:
         content: str,
         style: str = "modern",
         custom_instructions: Optional[str] = None,
-        model_name: str = "gemini-2.0-flash",
+        model_name: str = "gemini-2.5-flash",
         persona_instructions: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Generate an infographic content plan."""

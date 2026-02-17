@@ -814,7 +814,7 @@ export default function NotebookPage() {
         content: response.data.content,
         citations: response.data.citations,
         source_ids_used: Array.from(selectedSources),
-        model_used: response.usage?.model_used || 'gemini-2.0-flash',
+        model_used: response.usage?.model_used || 'gemini-2.5-flash',
         input_tokens: response.usage?.input_tokens || 0,
         output_tokens: response.usage?.output_tokens || 0,
         cost_usd: response.usage?.cost_usd || 0,

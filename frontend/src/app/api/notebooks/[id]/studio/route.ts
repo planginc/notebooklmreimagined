@@ -208,7 +208,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let resultContent: any = {};
-      let modelUsed = 'gemini-2.0-flash-exp';
+      let modelUsed = 'gemini-2.5-flash';
       let costUsd = 0.01;
 
       if (type === 'data_table') {

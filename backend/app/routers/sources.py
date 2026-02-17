@@ -119,13 +119,19 @@ async def upload_source(
             }).eq("id", source["id"]).execute()
 
     except Exception as e:
+        # Mark as ready even if summary fails - file content is still usable
         supabase.table("sources").update({
-            "status": "failed",
-            "error_message": str(e),
+            "status": "ready",
+            "error_message": f"Summary generation failed: {str(e)[:200]}",
         }).eq("id", source["id"]).execute()
 
     # Update notebook source count
-    supabase.rpc("increment_source_count", {"notebook_id": str(notebook_id)}).execute()
+    try:
+        supabase.table("notebooks").update({
+            "source_count": supabase.table("sources").select("id", count="exact").eq("notebook_id", str(notebook_id)).execute().count or 0
+        }).eq("id", str(notebook_id)).execute()
+    except Exception:
+        pass  # Non-critical
 
     # Refresh source data
     result = supabase.table("sources").select("*").eq("id", source["id"]).single().execute()
@@ -240,7 +246,7 @@ async def add_text_source(
 
     source = result.data[0]
 
-    # Generate summary
+    # Generate summary (optional - source is usable without it)
     try:
         summary_result = await gemini_service.generate_summary(text_source.content[:50000])
 
@@ -257,10 +263,20 @@ async def add_text_source(
         }).eq("id", source["id"]).execute()
 
     except Exception as e:
+        # Mark as ready even if summary generation fails - content is still usable
         supabase.table("sources").update({
-            "status": "failed",
-            "error_message": str(e),
+            "status": "ready",
+            "error_message": f"Summary generation failed: {str(e)[:200]}",
         }).eq("id", source["id"]).execute()
+
+    # Update notebook source count
+    try:
+        count_result = supabase.table("sources").select("id", count="exact").eq("notebook_id", str(notebook_id)).execute()
+        supabase.table("notebooks").update({
+            "source_count": count_result.count or 0
+        }).eq("id", str(notebook_id)).execute()
+    except Exception:
+        pass  # Non-critical
 
     result = supabase.table("sources").select("*").eq("id", source["id"]).single().execute()
 
@@ -346,6 +362,12 @@ async def delete_source(
     supabase.table("sources").delete().eq("id", str(source_id)).execute()
 
     # Update notebook source count
-    supabase.rpc("decrement_source_count", {"notebook_id": str(notebook_id)}).execute()
+    try:
+        count_result = supabase.table("sources").select("id", count="exact").eq("notebook_id", str(notebook_id)).execute()
+        supabase.table("notebooks").update({
+            "source_count": count_result.count or 0
+        }).eq("id", str(notebook_id)).execute()
+    except Exception:
+        pass  # Non-critical
 
     return ApiResponse(data={"deleted": True, "id": str(source_id)})

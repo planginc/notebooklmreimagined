@@ -165,7 +165,7 @@ Content:
 {content[:10000]}
 
 Generate ONLY the video prompt, nothing else. Make it vivid and visually descriptive.""",
-            model_name="gemini-2.0-flash",
+            model_name="gemini-2.5-flash",
             temperature=0.7,
         )
 

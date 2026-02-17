@@ -125,7 +125,7 @@ async function generateAIResponse(
 
   try {
     const genAI = new GoogleGenerativeAI(GOOGLE_API_KEY);
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
     // Build source list with correct indices
     const sourceList = sourceInfos.map((s) => `[${s.index}] ${s.name}`).join('\n');
@@ -268,7 +268,7 @@ Return ONLY a valid JSON array (no other text):
         input_tokens: inputTokens,
         output_tokens: outputTokens,
         cost_usd: totalCost,
-        model_used: 'gemini-2.0-flash-exp',
+        model_used: 'gemini-2.5-flash',
       },
     };
   } catch (error) {

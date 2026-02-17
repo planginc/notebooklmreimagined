@@ -218,7 +218,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
             type: 'flashcards',
             data: resultData,
             source_ids: sourceIdArray,
-            model_used: 'gemini-2.0-flash-exp',
+            model_used: 'gemini-2.5-flash',
             cost_usd: 0.001,
           })
           .select()
@@ -231,7 +231,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         return NextResponse.json({
           data: resultData,
           material_id: saved?.id,
-          usage: { model_used: 'gemini-2.0-flash-exp', cost_usd: 0.001 },
+          usage: { model_used: 'gemini-2.5-flash', cost_usd: 0.001 },
         });
       } catch (error) {
         console.error('Flashcard generation error:', error);
@@ -267,7 +267,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
             type: 'quiz',
             data: resultData,
             source_ids: sourceIdArray,
-            model_used: 'gemini-2.0-flash-exp',
+            model_used: 'gemini-2.5-flash',
             cost_usd: 0.001,
           })
           .select()
@@ -280,7 +280,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         return NextResponse.json({
           data: resultData,
           material_id: saved?.id,
-          usage: { model_used: 'gemini-2.0-flash-exp', cost_usd: 0.001 },
+          usage: { model_used: 'gemini-2.5-flash', cost_usd: 0.001 },
         });
       } catch (error) {
         console.error('Quiz generation error:', error);
@@ -310,7 +310,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
             type: 'study_guide',
             data: resultData,
             source_ids: sourceIdArray,
-            model_used: 'gemini-2.0-flash-exp',
+            model_used: 'gemini-2.5-flash',
             cost_usd: 0.002,
           })
           .select()
@@ -323,7 +323,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         return NextResponse.json({
           data: resultData,
           material_id: saved?.id,
-          usage: { model_used: 'gemini-2.0-flash-exp', cost_usd: 0.002 },
+          usage: { model_used: 'gemini-2.5-flash', cost_usd: 0.002 },
         });
       } catch (error) {
         console.error('Study guide generation error:', error);
@@ -353,7 +353,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
             type: 'faq',
             data: resultData,
             source_ids: sourceIdArray,
-            model_used: 'gemini-2.0-flash-exp',
+            model_used: 'gemini-2.5-flash',
             cost_usd: 0.001,
           })
           .select()
@@ -366,7 +366,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         return NextResponse.json({
           data: resultData,
           material_id: saved?.id,
-          usage: { model_used: 'gemini-2.0-flash-exp', cost_usd: 0.001 },
+          usage: { model_used: 'gemini-2.5-flash', cost_usd: 0.001 },
         });
       } catch (error) {
         console.error('FAQ generation error:', error);
@@ -396,7 +396,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
             type: 'mind_map',
             data: resultData,
             source_ids: sourceIdArray,
-            model_used: 'gemini-2.0-flash-exp',
+            model_used: 'gemini-2.5-flash',
             cost_usd: 0.001,
           })
           .select()
@@ -409,7 +409,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         return NextResponse.json({
           data: resultData,
           material_id: saved?.id,
-          usage: { model_used: 'gemini-2.0-flash-exp', cost_usd: 0.001 },
+          usage: { model_used: 'gemini-2.5-flash', cost_usd: 0.001 },
         });
       } catch (error) {
         console.error('Mind map generation error:', error);

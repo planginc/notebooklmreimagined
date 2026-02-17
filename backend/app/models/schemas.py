@@ -132,7 +132,7 @@ class ChatMessage(BaseModel):
     message: str
     session_id: Optional[UUID] = None
     source_ids: Optional[List[UUID]] = None
-    model: str = "gemini-2.0-flash"
+    model: str = "gemini-2.5-flash"
 
 
 class Citation(BaseModel):
@@ -246,7 +246,7 @@ class ResearchResponse(BaseModel):
 class FlashcardCreate(BaseModel):
     source_ids: Optional[List[UUID]] = None
     count: int = 10
-    model: str = "gemini-2.0-flash"
+    model: str = "gemini-2.5-flash"
 
 
 class Flashcard(BaseModel):
@@ -262,7 +262,7 @@ class FlashcardsResponse(BaseModel):
 class QuizCreate(BaseModel):
     source_ids: Optional[List[UUID]] = None
     question_count: int = 10
-    model: str = "gemini-2.0-flash"
+    model: str = "gemini-2.5-flash"
 
 
 class QuizQuestion(BaseModel):
@@ -279,7 +279,7 @@ class QuizResponse(BaseModel):
 
 class StudyGuideCreate(BaseModel):
     source_ids: Optional[List[UUID]] = None
-    model: str = "gemini-2.0-flash"
+    model: str = "gemini-2.5-flash"
 
 
 class StudyGuideResponse(BaseModel):
@@ -293,7 +293,7 @@ class StudyGuideResponse(BaseModel):
 class FAQCreate(BaseModel):
     source_ids: Optional[List[UUID]] = None
     count: int = 10
-    model: str = "gemini-2.0-flash"
+    model: str = "gemini-2.5-flash"
 
 
 class FAQItem(BaseModel):
@@ -366,33 +366,33 @@ class StudioOutputCreate(BaseModel):
     type: StudioOutputType
     source_ids: Optional[List[UUID]] = None
     custom_instructions: Optional[str] = None
-    model: str = "gemini-2.0-flash"
+    model: str = "gemini-2.5-flash"
 
 
 class DataTableCreate(BaseModel):
     source_ids: Optional[List[UUID]] = None
     custom_instructions: Optional[str] = None
-    model: str = "gemini-2.0-flash"
+    model: str = "gemini-2.5-flash"
 
 
 class ReportCreate(BaseModel):
     source_ids: Optional[List[UUID]] = None
     custom_instructions: Optional[str] = None
-    model: str = "gemini-2.0-flash"
+    model: str = "gemini-2.5-flash"
 
 
 class SlideDeckCreate(BaseModel):
     source_ids: Optional[List[UUID]] = None
     slide_count: int = 10
     custom_instructions: Optional[str] = None
-    model: str = "gemini-2.0-flash"
+    model: str = "gemini-2.5-flash"
 
 
 class InfographicCreate(BaseModel):
     source_ids: Optional[List[UUID]] = None
     style: str = "modern"  # modern, minimal, bold, infographic
     custom_instructions: Optional[str] = None
-    model: str = "gemini-2.0-flash"
+    model: str = "gemini-2.5-flash"
 
 
 class StudioOutputResponse(BaseModel):
@@ -563,7 +563,7 @@ class GlobalChatMessage(BaseModel):
     """Chat message that can query across multiple notebooks."""
     message: str
     notebook_ids: Optional[List[UUID]] = None  # None = query all notebooks
-    model: str = "gemini-2.0-flash"
+    model: str = "gemini-2.5-flash"
     max_sources_per_notebook: int = Field(default=10, ge=1, le=50)
 
 

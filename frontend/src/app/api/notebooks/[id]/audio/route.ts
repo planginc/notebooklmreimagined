@@ -202,7 +202,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
           script,
           audio_file_path: audioUrl,
           duration_seconds: durationSeconds,
-          model_used: 'gemini-2.0-flash-exp',
+          model_used: 'gemini-2.5-flash',
           cost_usd: audioUrl ? 0.01 : 0.005,
           completed_at: new Date().toISOString(),
         })

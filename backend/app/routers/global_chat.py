@@ -200,7 +200,7 @@ User asked: {chat.message}
 Response excerpt: {content[:500]}
 
 Return only the questions, one per line.""",
-            model_name="gemini-2.0-flash",
+            model_name="gemini-2.5-flash",
         )
         suggested_questions = [
             q.strip() for q in suggest_result["content"].strip().split("\n")

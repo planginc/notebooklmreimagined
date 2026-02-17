@@ -104,20 +104,26 @@ async def send_message(
     }).execute()
 
     # Generate response with context (include persona instructions)
-    if context:
-        result = await gemini_service.generate_with_context(
-            message=chat.message,
-            context=context,
-            model_name=chat.model,
-            source_names=source_names,
-            persona_instructions=persona_instructions,
-        )
-    else:
-        result = await gemini_service.generate_content(
-            prompt=chat.message,
-            model_name=chat.model,
-            system_instruction=persona_instructions if persona_instructions else None,
-        )
+    try:
+        if context:
+            result = await gemini_service.generate_with_context(
+                message=chat.message,
+                context=context,
+                model_name=chat.model,
+                source_names=source_names,
+                persona_instructions=persona_instructions,
+            )
+        else:
+            result = await gemini_service.generate_content(
+                prompt=chat.message,
+                model_name=chat.model,
+                system_instruction=persona_instructions if persona_instructions else None,
+            )
+    except Exception as e:
+        error_msg = str(e)
+        if "429" in error_msg or "quota" in error_msg.lower() or "ResourceExhausted" in error_msg:
+            raise HTTPException(status_code=429, detail="Gemini API rate limit exceeded. Please try again later or check your API key billing.")
+        raise HTTPException(status_code=502, detail=f"AI service error: {error_msg[:200]}")
 
     # Parse citations from response (simple bracket notation)
     content = result["content"]
@@ -139,7 +145,7 @@ async def send_message(
         try:
             suggest_result = await gemini_service.generate_content(
                 prompt=f"Based on this conversation about the sources, suggest 3 follow-up questions the user might want to ask. Return only the questions, one per line.\n\nUser asked: {chat.message}\n\nResponse: {content[:500]}",
-                model_name="gemini-2.0-flash",
+                model_name="gemini-2.5-flash",
             )
             suggested_questions = [q.strip() for q in suggest_result["content"].strip().split("\n") if q.strip()][:3]
         except:

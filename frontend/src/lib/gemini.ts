@@ -12,7 +12,7 @@ const genAI = apiKey ? new GoogleGenerativeAI(apiKey) : null;
 // Models for different use cases
 export function getFlashModel(): GenerativeModel | null {
   if (!genAI) return null;
-  return genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
+  return genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 }
 
 export function getProModel(): GenerativeModel | null {
@@ -397,7 +397,7 @@ export function isGeminiConfigured(): boolean {
 // Simple text generation
 export async function generateContent(
   prompt: string,
-  modelName: string = 'gemini-2.0-flash'
+  modelName: string = 'gemini-2.5-flash'
 ): Promise<{ text: string }> {
   if (!genAI) throw new Error('Gemini API not configured');
 

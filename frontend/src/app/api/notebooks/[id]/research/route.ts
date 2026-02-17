@@ -100,7 +100,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
           sources_analyzed_count,
           report_content,
           report_citations: citations,
-          model_used: validMode === 'deep' ? 'gemini-1.5-pro' : 'gemini-2.0-flash-exp',
+          model_used: validMode === 'deep' ? 'gemini-1.5-pro' : 'gemini-2.5-flash',
           cost_usd: validMode === 'deep' ? 0.01 : 0.003,
           completed_at: new Date().toISOString(),
         })
