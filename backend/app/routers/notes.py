@@ -49,7 +49,7 @@ async def create_note(
         "tags": note.tags,
     }
 
-    result = supabase.table("notes").insert(note_data).execute()
+    result = supabase.table("notebook_notes").insert(note_data).execute()
 
     if not result.data:
         raise HTTPException(status_code=400, detail="Failed to create note")
@@ -88,7 +88,7 @@ async def save_response(
         "original_message_id": str(request.message_id),
     }
 
-    result = supabase.table("notes").insert(note_data).execute()
+    result = supabase.table("notebook_notes").insert(note_data).execute()
 
     if not result.data:
         raise HTTPException(status_code=400, detail="Failed to save response")
@@ -106,7 +106,7 @@ async def list_notes(
     supabase = get_supabase_client()
 
     result = (
-        supabase.table("notes")
+        supabase.table("notebook_notes")
         .select("*")
         .eq("notebook_id", str(notebook_id))
         .order("is_pinned", desc=True)
@@ -128,7 +128,7 @@ async def get_note(
     supabase = get_supabase_client()
 
     result = (
-        supabase.table("notes")
+        supabase.table("notebook_notes")
         .select("*")
         .eq("id", str(note_id))
         .eq("notebook_id", str(notebook_id))
@@ -167,7 +167,7 @@ async def update_note(
         raise HTTPException(status_code=400, detail="No fields to update")
 
     result = (
-        supabase.table("notes")
+        supabase.table("notebook_notes")
         .update(update_data)
         .eq("id", str(note_id))
         .eq("notebook_id", str(notebook_id))
@@ -191,7 +191,7 @@ async def delete_note(
     supabase = get_supabase_client()
 
     result = (
-        supabase.table("notes")
+        supabase.table("notebook_notes")
         .delete()
         .eq("id", str(note_id))
         .eq("notebook_id", str(notebook_id))

@@ -93,7 +93,7 @@ async def get_notebook_data(
     # Notes
     if include_notes:
         notes_result = (
-            supabase.table("notes")
+            supabase.table("notebook_notes")
             .select("*")
             .eq("notebook_id", notebook_id)
             .order("created_at", desc=False)
