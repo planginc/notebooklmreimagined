@@ -263,7 +263,7 @@ Format as JSON array:
         content: str,
         format_type: str = "deep_dive",
         custom_instructions: Optional[str] = None,
-        model_name: str = "gemini-2.5-pro",
+        model_name: str = "gemini-2.5-flash",
     ) -> Dict[str, Any]:
         """Generate a podcast-style script."""
         format_prompts = {
@@ -302,33 +302,17 @@ Make it natural, engaging, and educational."""
         speakers = self._extract_speakers(script, format_type)
 
         try:
-            if len(speakers) == 1:
-                # Single speaker TTS
-                response = genai_client.models.generate_content(
-                    model="gemini-2.5-flash-preview-tts",
-                    contents=script,
-                    config=genai_types.GenerateContentConfig(
-                        response_modalities=["AUDIO"],
-                        speech_config=genai_types.SpeechConfig(
-                            voice_config=genai_types.VoiceConfig(
-                                prebuilt_voice_config=genai_types.PrebuiltVoiceConfig(
-                                    voice_name='Kore',
-                                )
-                            )
-                        ),
-                    )
-                )
-            else:
-                # Multi-speaker TTS
+            if len(speakers) == 2:
+                # Multi-speaker TTS (Gemini requires exactly 2 speakers)
                 speaker_configs = []
-                voice_names = ['Kore', 'Puck', 'Charon', 'Fenrir', 'Aoede']
+                voice_names = ['Kore', 'Puck']
                 for i, speaker in enumerate(speakers):
                     speaker_configs.append(
                         genai_types.SpeakerVoiceConfig(
                             speaker=speaker,
                             voice_config=genai_types.VoiceConfig(
                                 prebuilt_voice_config=genai_types.PrebuiltVoiceConfig(
-                                    voice_name=voice_names[i % len(voice_names)],
+                                    voice_name=voice_names[i],
                                 )
                             )
                         )
@@ -344,6 +328,22 @@ Make it natural, engaging, and educational."""
                                 speaker_voice_configs=speaker_configs
                             )
                         )
+                    )
+                )
+            else:
+                # Single speaker TTS (1 speaker or 3+ speakers fall back to single)
+                response = genai_client.models.generate_content(
+                    model="gemini-2.5-flash-preview-tts",
+                    contents=script,
+                    config=genai_types.GenerateContentConfig(
+                        response_modalities=["AUDIO"],
+                        speech_config=genai_types.SpeechConfig(
+                            voice_config=genai_types.VoiceConfig(
+                                prebuilt_voice_config=genai_types.PrebuiltVoiceConfig(
+                                    voice_name='Kore',
+                                )
+                            )
+                        ),
                     )
                 )
 
@@ -394,7 +394,7 @@ Make it natural, engaging, and educational."""
         self,
         content: str,
         style: str = "explainer",
-        model_name: str = "gemini-2.5-pro",
+        model_name: str = "gemini-2.5-flash",
     ) -> Dict[str, Any]:
         """Generate a video script."""
         style_prompts = {
@@ -424,7 +424,7 @@ Make it engaging and suitable for a 30-60 second video."""
         self,
         query: str,
         mode: str = "fast",
-        model_name: str = "gemini-2.5-pro",
+        model_name: str = "gemini-2.5-flash",
     ) -> Dict[str, Any]:
         """Generate a research report."""
         depth_instruction = "comprehensive and detailed" if mode == "deep" else "concise but thorough"

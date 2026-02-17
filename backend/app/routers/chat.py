@@ -259,12 +259,16 @@ async def delete_session(
 async def rename_session(
     notebook_id: UUID,
     session_id: UUID,
-    title: str,
+    body: dict,
     user: dict = Depends(get_current_user),
 ):
     """Rename a chat session."""
     await verify_notebook_access(notebook_id, user["id"])
     supabase = get_supabase_client()
+
+    title = body.get("title")
+    if not title:
+        raise HTTPException(status_code=400, detail="Title is required")
 
     result = (
         supabase.table("chat_sessions")

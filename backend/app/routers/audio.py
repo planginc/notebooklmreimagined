@@ -13,17 +13,16 @@ from app.models.schemas import (
 from app.services.auth import get_current_user
 from app.services.supabase_client import get_supabase_client
 from app.services.gemini import gemini_service
+from app.config import get_settings
 
 router = APIRouter(prefix="/notebooks/{notebook_id}/audio", tags=["audio"])
-
-# Supabase storage URL for audio bucket
-SUPABASE_URL = "https://acsxrlkevwjmvbavgogu.supabase.co"
 
 
 def add_audio_url(audio_data: dict) -> dict:
     """Add audio_url to response if audio_file_path exists."""
     if audio_data and audio_data.get("audio_file_path"):
-        audio_data["audio_url"] = f"{SUPABASE_URL}/storage/v1/object/public/audio/{audio_data['audio_file_path']}"
+        settings = get_settings()
+        audio_data["audio_url"] = f"{settings.supabase_url}/storage/v1/object/public/audio/{audio_data['audio_file_path']}"
     return audio_data
 
 
@@ -199,7 +198,7 @@ async def create_audio(
         supabase.table("audio_overviews").update({
             "status": "completed",
             "progress_percent": 100,
-            "model_used": "gemini-2.5-pro",
+            "model_used": "gemini-2.5-flash",
             "cost_usd": script_result["usage"]["cost_usd"],
             "audio_file_path": audio_filename,
             "duration_seconds": int(tts_result["duration_seconds"]),
