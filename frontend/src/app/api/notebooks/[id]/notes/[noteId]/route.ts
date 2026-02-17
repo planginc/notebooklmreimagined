@@ -42,7 +42,7 @@ export async function GET(
     }
 
     const { data: note } = await supabase
-      .from('notes')
+      .from('notebook_notes')
       .select('*')
       .eq('id', noteId)
       .eq('notebook_id', notebookId)
@@ -86,7 +86,7 @@ export async function PATCH(
     updateData.updated_at = new Date().toISOString();
 
     const { data: note, error } = await supabase
-      .from('notes')
+      .from('notebook_notes')
       .update(updateData)
       .eq('id', noteId)
       .eq('notebook_id', notebookId)
@@ -117,7 +117,7 @@ export async function DELETE(
     }
 
     const { error } = await supabase
-      .from('notes')
+      .from('notebook_notes')
       .delete()
       .eq('id', noteId)
       .eq('notebook_id', notebookId);

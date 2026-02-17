@@ -39,7 +39,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     }
 
     const { data: notes } = await supabase
-      .from('notes')
+      .from('notebook_notes')
       .select('*')
       .eq('notebook_id', notebookId)
       .order('is_pinned', { ascending: false })
@@ -65,7 +65,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const { title, content, tags } = body;
 
     const { data: note, error } = await supabase
-      .from('notes')
+      .from('notebook_notes')
       .insert({
         notebook_id: notebookId,
         type: 'written',

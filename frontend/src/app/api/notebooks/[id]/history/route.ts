@@ -108,7 +108,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
           .order('created_at', { ascending: false }),
 
         supabase
-          .from('notes')
+          .from('notebook_notes')
           .select('id, title, content, type, created_at, is_pinned, tags')
           .eq('notebook_id', notebookId)
           .order('created_at', { ascending: false }),

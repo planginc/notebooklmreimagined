@@ -84,7 +84,7 @@ async function gatherExportData(notebookId: string, options: ExportOptions) {
   // Notes
   if (includeNotes) {
     const { data: notes } = await supabase
-      .from('notes')
+      .from('notebook_notes')
       .select('*')
       .eq('notebook_id', notebookId)
       .order('created_at', { ascending: true });

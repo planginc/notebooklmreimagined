@@ -132,7 +132,7 @@ export function useNotes(notebookId: string) {
     queryKey: notebookKeys.notes(notebookId),
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('notes')
+        .from('notebook_notes')
         .select('*')
         .eq('notebook_id', notebookId)
         .order('is_pinned', { ascending: false })

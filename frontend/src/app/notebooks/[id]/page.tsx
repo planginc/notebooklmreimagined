@@ -1,12 +1,9 @@
 'use client';
 
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from '@/components/ui/sheet';
+// Toast notifications removed per user request
+// import { toast } from 'sonner'
+import { User } from '@supabase/supabase-js';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowLeft,
   Loader2,
@@ -31,15 +28,51 @@ import {
   Settings,
   Download,
 } from 'lucide-react';
-// Toast notifications removed per user request
-// import { toast } from 'sonner'
-import { User } from '@supabase/supabase-js';
-import { motion, AnimatePresence } from 'framer-motion';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState, useRef } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
+import { ChatPanel } from '@/components/chat/chat-panel';
+
+// Study viewers
+
+// Studio viewers
+import { VideoPlayer } from '@/components/studio/video-player';
+import { ResearchReport } from '@/components/studio/research-report';
+import { InfographicViewer } from '@/components/studio/infographic-viewer';
+
+// Notebook settings
+import { NotebookSettingsDialog, NotebookSettings } from '@/components/notebook/notebook-settings';
+import { ThreePanelLayout } from '@/components/panels/three-panel-layout';
+import { SourcesPanel } from '@/components/sources/sources-panel';
+import { AudioPlayer } from '@/components/studio/audio-player';
 import { StudioPanel, ExportOptionsState } from '@/components/studio/studio-panel';
-import type { GenerationConfig } from '@/components/studio/generation-config-dialog';
+import { FAQViewer } from '@/components/study/faq-viewer';
+import { FlashcardViewer } from '@/components/study/flashcard-viewer';
+import { MindMapViewer } from '@/components/study/mind-map-viewer';
+import { QuizViewer } from '@/components/study/quiz-viewer';
+import { StudyGuideViewer } from '@/components/study/study-guide-viewer';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet';
+import { Textarea } from '@/components/ui/textarea';
+import { chatApi, notebooksApi } from '@/lib/api';
 import {
   exportNotebook,
   exportSlideDeckToPPTX,
@@ -49,9 +82,6 @@ import {
   ReportData,
   DataTableExportData,
 } from '@/lib/export-utils';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-import { ChatPanel } from '@/components/chat/chat-panel';
 import {
   useNotebook,
   useSources,
@@ -64,38 +94,9 @@ import {
   useCreativeOutputs,
   useInvalidateNotebook,
 } from '@/lib/hooks/use-notebook-queries';
-
-// Study viewers
-import { QuizViewer } from '@/components/study/quiz-viewer';
-import { StudyGuideViewer } from '@/components/study/study-guide-viewer';
-import { FAQViewer } from '@/components/study/faq-viewer';
-import { MindMapViewer } from '@/components/study/mind-map-viewer';
-
-// Studio viewers
-import { AudioPlayer } from '@/components/studio/audio-player';
-import { VideoPlayer } from '@/components/studio/video-player';
-import { ResearchReport } from '@/components/studio/research-report';
-import { InfographicViewer } from '@/components/studio/infographic-viewer';
-
-// Notebook settings
-import { NotebookSettingsDialog, NotebookSettings } from '@/components/notebook/notebook-settings';
-import { ThreePanelLayout } from '@/components/panels/three-panel-layout';
-import { SourcesPanel } from '@/components/sources/sources-panel';
-import { FlashcardViewer } from '@/components/study/flashcard-viewer';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { chatApi, notebooksApi } from '@/lib/api';
 import { createClient, Notebook, Source, ChatMessage } from '@/lib/supabase';
+
+import type { GenerationConfig } from '@/components/studio/generation-config-dialog';
 
 interface LocalNote {
   id: string;
@@ -834,7 +835,7 @@ export default function NotebookPage() {
 
   const saveResponseAsNote = async (msg: ChatMessage) => {
     const { error } = await supabase
-      .from('notes')
+      .from('notebook_notes')
       .insert({
         notebook_id: notebookId,
         type: 'saved_response',
@@ -858,7 +859,7 @@ export default function NotebookPage() {
 
     setSavingNote(true);
     const { error } = await supabase
-      .from('notes')
+      .from('notebook_notes')
       .insert({
         notebook_id: notebookId,
         type: 'written',
@@ -2490,7 +2491,7 @@ export default function NotebookPage() {
                               </h3>
                             )}
                             <blockquote className="text-lg text-[var(--text-primary)] italic">
-                              "{quote}"
+                              &ldquo;{quote}&rdquo;
                             </blockquote>
                             {author && (
                               <div className="mt-2 text-sm text-[var(--text-secondary)]">
