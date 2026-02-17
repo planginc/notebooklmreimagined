@@ -158,7 +158,7 @@ open-notebook/             # Alternative notebook implementation
 |---------|-------|
 | Chat (fast) | gemini-2.5-flash |
 | Chat (quality) | gemini-3-pro |
-| Frontend chat | gemini-2.0-flash-exp (in Next.js API routes) |
+| Frontend chat | gemini-2.5-flash (in Next.js API routes) |
 | Audio scripts | gemini-2.5-pro |
 | TTS | gemini-2.5-pro-tts-preview |
 | Video | veo-3.1-fast-preview |
@@ -199,6 +199,27 @@ mcp__claude-in-chrome__computer           # Take screenshots, click, type
 mcp__claude-in-chrome__read_page          # Get accessibility tree
 mcp__claude-in-chrome__find               # Find elements by description
 ```
+
+## Deployment (Vercel)
+
+| Service | URL |
+|---------|-----|
+| Backend API | https://backend-nine-beta-38.vercel.app |
+| Backend Docs | https://backend-nine-beta-38.vercel.app/docs |
+| Frontend | https://frontend-ebon-kappa-14.vercel.app |
+
+Deploy commands:
+```bash
+# Backend
+cd backend && vercel --prod
+
+# Frontend
+cd frontend && vercel --prod
+```
+
+## Login Credentials
+
+- App login: paml@digitaleasemedia.com / Willie_Telegram
 
 ## Core Specification Documents
 
