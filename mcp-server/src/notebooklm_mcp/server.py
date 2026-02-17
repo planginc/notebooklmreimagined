@@ -59,16 +59,15 @@ def configure_gemini():
 
 # Model pricing (per 1M tokens)
 MODEL_PRICING = {
-    "gemini-2.0-flash": {"input": 0.10, "output": 0.40},
-    "gemini-2.0-flash-lite": {"input": 0.075, "output": 0.30},
-    "gemini-2.5-pro": {"input": 1.25, "output": 10.0},
     "gemini-2.5-flash": {"input": 0.15, "output": 0.60},
+    "gemini-2.5-flash-lite": {"input": 0.075, "output": 0.30},
+    "gemini-2.5-pro": {"input": 1.25, "output": 10.0},
 }
 
 
 def calculate_cost(model: str, input_tokens: int, output_tokens: int) -> float:
     """Calculate cost in USD."""
-    pricing = MODEL_PRICING.get(model, MODEL_PRICING["gemini-2.0-flash"])
+    pricing = MODEL_PRICING.get(model, MODEL_PRICING["gemini-2.5-flash"])
     input_cost = (input_tokens / 1_000_000) * pricing["input"]
     output_cost = (output_tokens / 1_000_000) * pricing["output"]
     return round(input_cost + output_cost, 6)
@@ -76,7 +75,7 @@ def calculate_cost(model: str, input_tokens: int, output_tokens: int) -> float:
 
 async def generate_content(
     prompt: str,
-    model_name: str = "gemini-2.0-flash",
+    model_name: str = "gemini-2.5-flash",
     system_instruction: Optional[str] = None,
     temperature: float = 0.7,
 ) -> Dict[str, Any]:
@@ -257,8 +256,8 @@ TOOLS = [
                 },
                 "model": {
                     "type": "string",
-                    "description": "Model to use (gemini-2.0-flash, gemini-2.5-pro)",
-                    "default": "gemini-2.0-flash"
+                    "description": "Model to use (gemini-2.5-flash, gemini-2.5-pro)",
+                    "default": "gemini-2.5-flash"
                 }
             },
             "required": ["notebook_id", "message", "user_id"]
@@ -583,7 +582,7 @@ async def handle_tool(name: str, args: dict) -> dict:
             user_id=args["user_id"],
             message=args["message"],
             source_ids=args.get("source_ids"),
-            model=args.get("model", "gemini-2.0-flash")
+            model=args.get("model", "gemini-2.5-flash")
         )
 
     elif name == "global_chat":
@@ -780,7 +779,7 @@ Content:
 
 Format as JSON:
 {{"summary": "...", "topics": ["..."], "suggested_questions": ["..."]}}""",
-        model_name="gemini-2.0-flash"
+        model_name="gemini-2.5-flash"
     )
 
     try:
@@ -910,7 +909,7 @@ async def chat_with_sources(
     user_id: str,
     message: str,
     source_ids: Optional[List[str]] = None,
-    model: str = "gemini-2.0-flash"
+    model: str = "gemini-2.5-flash"
 ) -> dict:
     """Chat with sources using RAG."""
     context, sources = await get_source_content(notebook_id, source_ids)
@@ -998,7 +997,7 @@ Cite sources as [Notebook: Source Name] when referencing information."""
 
     result = await generate_content(
         prompt=f"Sources from multiple notebooks:\n\n{chr(10).join(all_context)}\n\nQuestion: {message}",
-        model_name="gemini-2.0-flash",
+        model_name="gemini-2.5-flash",
         system_instruction=system_instruction
     )
 

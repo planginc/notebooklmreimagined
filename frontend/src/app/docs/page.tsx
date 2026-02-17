@@ -6,7 +6,6 @@ import { useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 
-
 interface EndpointProps {
   method: 'GET' | 'POST' | 'PATCH' | 'DELETE';
   path: string;
@@ -261,7 +260,7 @@ export default function ApiDocsPage() {
     "input_tokens": 1500,
     "output_tokens": 500,
     "cost_usd": 0.002,
-    "model_used": "gemini-2.0-flash"
+    "model_used": "gemini-2.5-flash"
   },
   "meta": {}
 }`}
@@ -432,7 +431,7 @@ export default function ApiDocsPage() {
   "message": "What are the main findings in the research?",
   "session_id": null,
   "source_ids": ["source-uuid-1", "source-uuid-2"],
-  "model": "gemini-2.0-flash"
+  "model": "gemini-2.5-flash"
 }`}
               responseExample={`{
   "data": {
@@ -457,7 +456,7 @@ export default function ApiDocsPage() {
     "input_tokens": 2500,
     "output_tokens": 800,
     "cost_usd": 0.003,
-    "model_used": "gemini-2.0-flash"
+    "model_used": "gemini-2.5-flash"
   }
 }`}
               notes="Leave session_id null to start a new chat session, or pass an existing session_id to continue a conversation."
@@ -533,7 +532,7 @@ export default function ApiDocsPage() {
               requestBody={`{
   "message": "What are the best practices for API design?",
   "notebook_ids": null,
-  "model": "gemini-2.0-flash",
+  "model": "gemini-2.5-flash",
   "max_sources_per_notebook": 10
 }`}
               responseExample={`{
@@ -572,7 +571,7 @@ export default function ApiDocsPage() {
     "input_tokens": 5000,
     "output_tokens": 800,
     "cost_usd": 0.006,
-    "model_used": "gemini-2.0-flash"
+    "model_used": "gemini-2.5-flash"
   }
 }`}
               notes="Set notebook_ids to null to query ALL notebooks, or provide specific UUIDs to query a subset. Citations include notebook attribution."
@@ -767,7 +766,7 @@ export default function ApiDocsPage() {
               method="POST"
               path="/api/v1/notebooks/{notebook_id}/flashcards"
               description="Generate flashcards"
-              requestBody={`{"source_ids": ["source-uuid-1"], "count": 15, "model": "gemini-2.0-flash"}`}
+              requestBody={`{"source_ids": ["source-uuid-1"], "count": 15, "model": "gemini-2.5-flash"}`}
               responseExample={`{
   "data": {
     "flashcards": [
@@ -783,7 +782,7 @@ export default function ApiDocsPage() {
               method="POST"
               path="/api/v1/notebooks/{notebook_id}/quiz"
               description="Generate a quiz"
-              requestBody={`{"source_ids": ["source-uuid-1"], "question_count": 10, "model": "gemini-2.0-flash"}`}
+              requestBody={`{"source_ids": ["source-uuid-1"], "question_count": 10, "model": "gemini-2.5-flash"}`}
               responseExample={`{
   "data": {
     "questions": [
@@ -802,7 +801,7 @@ export default function ApiDocsPage() {
               method="POST"
               path="/api/v1/notebooks/{notebook_id}/study-guide"
               description="Generate a study guide"
-              requestBody={`{"source_ids": ["source-uuid-1"], "model": "gemini-2.0-flash"}`}
+              requestBody={`{"source_ids": ["source-uuid-1"], "model": "gemini-2.5-flash"}`}
               responseExample={`{
   "data": {
     "title": "Study Guide: Topic Name",
@@ -825,7 +824,7 @@ export default function ApiDocsPage() {
               method="POST"
               path="/api/v1/notebooks/{notebook_id}/faq"
               description="Generate FAQ"
-              requestBody={`{"source_ids": ["source-uuid-1"], "count": 10, "model": "gemini-2.0-flash"}`}
+              requestBody={`{"source_ids": ["source-uuid-1"], "count": 10, "model": "gemini-2.5-flash"}`}
               responseExample={`{
   "data": {
     "faqs": [
@@ -928,7 +927,7 @@ export default function ApiDocsPage() {
               requestBody={`{
   "source_ids": ["source-uuid-1"],
   "custom_instructions": "Extract all dates and events mentioned",
-  "model": "gemini-2.0-flash"
+  "model": "gemini-2.5-flash"
 }`}
               responseExample={`{
   "data": {
@@ -955,7 +954,7 @@ export default function ApiDocsPage() {
               requestBody={`{
   "source_ids": ["source-uuid-1"],
   "custom_instructions": "Focus on financial implications",
-  "model": "gemini-2.0-flash"
+  "model": "gemini-2.5-flash"
 }`}
               responseExample={`{
   "data": {
@@ -981,7 +980,7 @@ export default function ApiDocsPage() {
   "source_ids": ["source-uuid-1"],
   "slide_count": 10,
   "custom_instructions": "Make it suitable for executives",
-  "model": "gemini-2.0-flash"
+  "model": "gemini-2.5-flash"
 }`}
               responseExample={`{
   "data": {
@@ -1011,7 +1010,7 @@ export default function ApiDocsPage() {
   "source_ids": ["source-uuid-1"],
   "style": "modern",
   "custom_instructions": "Highlight the top 5 statistics",
-  "model": "gemini-2.0-flash"
+  "model": "gemini-2.5-flash"
 }`}
               notes="Styles: modern, minimal, bold, infographic"
             />
