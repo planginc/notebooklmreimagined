@@ -157,7 +157,7 @@ export const notebooksApi = {
 // Chat API
 export const chatApi = {
   async sendMessage(notebookId: string, request: ChatRequest): Promise<ApiResponse<ChatResponse>> {
-    // Use Next.js API route (Kimi) instead of FastAPI backend (Gemini)
+    // Use Next.js API route with Gemini
     const token = await getAuthToken();
     const headers: HeadersInit = { 'Content-Type': 'application/json' };
     if (token) {

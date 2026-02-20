@@ -1,6 +1,6 @@
+import { GoogleGenerativeAI, Part } from '@google/generative-ai';
 import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
-import OpenAI from 'openai';
 
 // Allow up to 60s for AI API calls on Vercel
 export const maxDuration = 60;
@@ -10,15 +10,16 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
-// Kimi (Moonshot AI) via OpenAI-compatible API
-const KIMI_API_KEY = process.env.KIMI_API_KEY;
-const KIMI_MODEL = 'kimi-latest';
+const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
+const GEMINI_MODEL = 'gemini-2.5-flash';
 
 // Max chars per source to keep responses fast
 const MAX_SOURCE_CHARS = 15000;
 
-// Download file from Supabase Storage and return as text
-async function downloadFileAsText(filePath: string): Promise<string | null> {
+// Download file from Supabase Storage and return as base64
+async function downloadFileAsBase64(
+  filePath: string
+): Promise<{ data: string; mimeType: string } | null> {
   try {
     const { data, error } = await supabase.storage.from('sources').download(filePath);
 
@@ -28,15 +29,20 @@ async function downloadFileAsText(filePath: string): Promise<string | null> {
     }
 
     const buffer = await data.arrayBuffer();
+    const base64 = Buffer.from(buffer).toString('base64');
+
     const ext = filePath.split('.').pop()?.toLowerCase();
+    const mimeTypes: Record<string, string> = {
+      pdf: 'application/pdf',
+      txt: 'text/plain',
+      md: 'text/markdown',
+      docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    };
 
-    // Only handle text-based files
-    if (ext === 'txt' || ext === 'md') {
-      return Buffer.from(buffer).toString('utf-8');
-    }
-
-    // For PDFs, we can't send binary to Kimi - use extracted content from metadata instead
-    return null;
+    return {
+      data: base64,
+      mimeType: mimeTypes[ext || ''] || 'application/octet-stream',
+    };
   } catch (error) {
     console.error('Error downloading file:', error);
     return null;
@@ -103,23 +109,26 @@ interface SourceInfo {
   id: string;
   name: string;
   content?: string;
+  isPdf?: boolean;
   filePath?: string;
 }
 
-// Generate AI response using Kimi (Moonshot AI)
-async function generateAIResponse(message: string, sourceInfos: SourceInfo[]) {
+// Generate AI response using Gemini
+async function generateAIResponse(
+  message: string,
+  sourceInfos: SourceInfo[],
+  fileParts: Part[] = []
+) {
   const sourceNames = sourceInfos.map((s) => s.name);
   const sourceContent = sourceInfos.filter((s) => s.content).map((s) => s.content!);
 
-  if (!KIMI_API_KEY) {
+  if (!GOOGLE_API_KEY) {
     return generateDemoResponse(message, sourceContent, sourceNames);
   }
 
   try {
-    const client = new OpenAI({
-      apiKey: KIMI_API_KEY,
-      baseURL: 'https://api.moonshot.ai/v1',
-    });
+    const genAI = new GoogleGenerativeAI(GOOGLE_API_KEY);
+    const model = genAI.getGenerativeModel({ model: GEMINI_MODEL });
 
     // Build context text with source indices
     const contextText = sourceInfos
@@ -127,7 +136,14 @@ async function generateAIResponse(message: string, sourceInfos: SourceInfo[]) {
       .map((s) => `[Source ${s.index}: ${s.name}]\n${s.content}`)
       .join('\n\n---\n\n');
 
-    const systemPrompt = `You are a helpful research assistant. Answer the user's question based ONLY on the provided sources.
+    // Build PDF source list for clarity
+    const pdfSources = sourceInfos.filter((s) => s.isPdf);
+    const pdfNote =
+      pdfSources.length > 0
+        ? `\nATTACHED PDF DOCUMENTS (cite using their numbers):\n${pdfSources.map((s) => `[${s.index}] = "${s.name}" (PDF attached below)`).join('\n')}`
+        : '';
+
+    const prompt = `You are a helpful research assistant. Answer the user's question based ONLY on the provided sources.
 
 CRITICAL CITATION RULES:
 - You have exactly ${sourceInfos.length} source(s) numbered [1] through [${sourceInfos.length}]
@@ -136,9 +152,12 @@ CRITICAL CITATION RULES:
 - When you cite information, use the source number like [1] or [2]
 
 YOUR SOURCES:
-${sourceInfos.map((s) => `[${s.index}] = "${s.name}"`).join('\n')}
+${sourceInfos.map((s) => `[${s.index}] = "${s.name}"${s.isPdf ? ' (PDF document)' : ''}`).join('\n')}
+${pdfNote}
+${contextText ? `\nTEXT SOURCE CONTENT:\n${contextText}` : ''}
+${fileParts.length > 0 ? `\nNote: PDF documents are attached below. Cite them using their source numbers from the list above.` : ''}
 
-${contextText ? `TEXT SOURCE CONTENT:\n${contextText}` : ''}
+USER QUESTION: ${message}
 
 RESPONSE FORMAT:
 1. Answer the question using information from the sources
@@ -146,18 +165,16 @@ RESPONSE FORMAT:
 3. At the very end, add this exact block with quotes from each source you cited:
 
 ---CITATIONS---
-[{"number": 1, "quote": "the exact text you referenced from source 1"}, {"number": 2, "quote": "the exact text you referenced from source 2"}]`;
+[{"number": 1, "quote": "the exact text you referenced from source 1"}, {"number": 2, "quote": "the exact text you referenced from source 2"}]
 
-    const result = await client.chat.completions.create({
-      model: KIMI_MODEL,
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: message },
-      ],
-      temperature: 0.7,
-    });
+Begin your response:`;
 
-    const text = result.choices[0]?.message?.content || '';
+    // Build content parts: text prompt first, then any file attachments
+    const contentParts: Part[] = [{ text: prompt }, ...fileParts];
+
+    const result = await model.generateContent(contentParts);
+    const response = result.response;
+    const text = response.text();
 
     console.log('[CHAT] Raw response (last 500 chars):', text.slice(-500));
 
@@ -167,8 +184,14 @@ RESPONSE FORMAT:
     console.log('[CHAT] Extracted citations:', JSON.stringify(citations, null, 2));
 
     // Extract usage info
-    const inputTokens = result.usage?.prompt_tokens || 0;
-    const outputTokens = result.usage?.completion_tokens || 0;
+    const usageMetadata = response.usageMetadata;
+    const inputTokens = usageMetadata?.promptTokenCount || 0;
+    const outputTokens = usageMetadata?.candidatesTokenCount || 0;
+
+    // Calculate cost
+    const inputCost = (inputTokens / 1_000_000) * 0.1;
+    const outputCost = (outputTokens / 1_000_000) * 0.4;
+    const totalCost = inputCost + outputCost;
 
     return {
       content: cleanedContent,
@@ -186,17 +209,17 @@ RESPONSE FORMAT:
       usage: {
         input_tokens: inputTokens,
         output_tokens: outputTokens,
-        cost_usd: 0,
-        model_used: KIMI_MODEL,
+        cost_usd: totalCost,
+        model_used: GEMINI_MODEL,
       },
     };
   } catch (error) {
-    console.error('Kimi API error:', error);
+    console.error('Gemini API error:', error);
     return generateDemoResponse(message, sourceContent, sourceNames);
   }
 }
 
-// Demo response when no API key is configured
+// Demo response when Gemini is not configured
 function generateDemoResponse(message: string, sourceContent: string[], sourceNames: string[]) {
   if (sourceContent.length === 0) {
     return {
@@ -212,7 +235,7 @@ function generateDemoResponse(message: string, sourceContent: string[], sourceNa
     .join('\n\n');
 
   return {
-    content: `Based on your sources, here's what I found:\n\n${context}\n\n---\n\n**Note**: This is a demo response. Add a KIMI_API_KEY to your environment to enable AI-powered answers.`,
+    content: `Based on your sources, here's what I found:\n\n${context}\n\n---\n\n**Note**: This is a demo response. Add a GOOGLE_API_KEY to your environment to enable AI-powered answers.`,
     citations: sourceNames.map((name, i) => ({
       number: i + 1,
       source_id: '',
@@ -274,6 +297,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     // Track sources with their index for proper citation mapping
     const sourceInfos: SourceInfo[] = [];
+    const fileParts: Part[] = [];
 
     for (let i = 0; i < (sources || []).length; i++) {
       const source = sources![i];
@@ -288,12 +312,24 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       if (source.metadata?.content) {
         sourceInfo.content = String(source.metadata.content).slice(0, MAX_SOURCE_CHARS);
       }
-      // Handle file sources (TXT, MD - download and read as text)
+      // Handle file sources (PDF, TXT, etc.)
       else if (source.file_path) {
         console.log(`[CHAT] Downloading file: ${source.file_path}`);
-        const textContent = await downloadFileAsText(source.file_path);
-        if (textContent) {
-          sourceInfo.content = textContent.slice(0, MAX_SOURCE_CHARS);
+        const fileData = await downloadFileAsBase64(source.file_path);
+        if (fileData) {
+          if (fileData.mimeType === 'text/plain' || fileData.mimeType === 'text/markdown') {
+            const textContent = Buffer.from(fileData.data, 'base64').toString('utf-8');
+            sourceInfo.content = textContent.slice(0, MAX_SOURCE_CHARS);
+          } else if (fileData.mimeType === 'application/pdf') {
+            sourceInfo.isPdf = true;
+            fileParts.push({
+              inlineData: {
+                mimeType: fileData.mimeType,
+                data: fileData.data,
+              },
+            });
+            console.log(`[CHAT] Added PDF as file part [${sourceInfo.index}]: ${source.name}`);
+          }
         }
       }
       // Handle sources with summaries (fallback)
@@ -309,7 +345,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     }
 
     console.log(
-      `[CHAT] Processed ${sources?.length || 0} sources: ${sourceInfos.filter((s) => s.content).length} with content`
+      `[CHAT] Processed ${sources?.length || 0} sources: ${sourceInfos.filter((s) => s.content).length} text, ${fileParts.length} files`
     );
 
     // Get or create session
@@ -335,7 +371,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     });
 
     // Generate AI response
-    const response = await generateAIResponse(message, sourceInfos);
+    const response = await generateAIResponse(message, sourceInfos, fileParts);
 
     // Save assistant message
     const { data: assistantMsg } = await supabase
