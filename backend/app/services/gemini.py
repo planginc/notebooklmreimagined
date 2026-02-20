@@ -1,4 +1,5 @@
 import google.generativeai as genai
+from openai import OpenAI
 from typing import Optional, List, Dict, Any
 import wave
 import io
@@ -22,22 +23,14 @@ genai_client = None
 if NEW_SDK_AVAILABLE:
     genai_client = genai_new.Client(api_key=settings.google_api_key)
 
-
-# Model pricing (per 1M tokens)
-MODEL_PRICING = {
-    "gemini-2.5-flash": {"input": 0.10, "output": 0.40},
-    "gemini-2.5-flash-lite": {"input": 0.075, "output": 0.30},
-    "gemini-2.5-pro": {"input": 1.25, "output": 10.0},
-    "gemini-2.5-flash": {"input": 0.15, "output": 0.60},
-}
-
-
-def calculate_cost(model: str, input_tokens: int, output_tokens: int) -> float:
-    """Calculate cost in USD for a given model and token counts."""
-    pricing = MODEL_PRICING.get(model, MODEL_PRICING["gemini-2.5-flash"])
-    input_cost = (input_tokens / 1_000_000) * pricing["input"]
-    output_cost = (output_tokens / 1_000_000) * pricing["output"]
-    return round(input_cost + output_cost, 6)
+# Initialize Kimi (Moonshot AI) client
+kimi_client = None
+KIMI_MODEL = "kimi-latest"
+if settings.kimi_api_key:
+    kimi_client = OpenAI(
+        api_key=settings.kimi_api_key,
+        base_url="https://api.moonshot.ai/v1",
+    )
 
 
 class GeminiService:
@@ -57,7 +50,55 @@ class GeminiService:
         system_instruction: Optional[str] = None,
         temperature: float = 0.7,
     ) -> Dict[str, Any]:
-        """Generate content using Gemini."""
+        """Generate content using Kimi (primary) or Gemini (fallback)."""
+
+        # Use Kimi if available
+        if kimi_client:
+            return await self._generate_with_kimi(prompt, system_instruction, temperature)
+
+        # Fallback to Gemini
+        return await self._generate_with_gemini(prompt, model_name, system_instruction, temperature)
+
+    async def _generate_with_kimi(
+        self,
+        prompt: str,
+        system_instruction: Optional[str] = None,
+        temperature: float = 0.7,
+    ) -> Dict[str, Any]:
+        """Generate content using Kimi (Moonshot AI)."""
+        messages = []
+        if system_instruction:
+            messages.append({"role": "system", "content": system_instruction})
+        messages.append({"role": "user", "content": prompt})
+
+        response = kimi_client.chat.completions.create(
+            model=KIMI_MODEL,
+            messages=messages,
+            temperature=temperature,
+        )
+
+        content = response.choices[0].message.content or ""
+        input_tokens = response.usage.prompt_tokens if response.usage else 0
+        output_tokens = response.usage.completion_tokens if response.usage else 0
+
+        return {
+            "content": content,
+            "usage": {
+                "input_tokens": input_tokens,
+                "output_tokens": output_tokens,
+                "cost_usd": 0,
+                "model_used": KIMI_MODEL,
+            },
+        }
+
+    async def _generate_with_gemini(
+        self,
+        prompt: str,
+        model_name: str = "gemini-2.5-flash",
+        system_instruction: Optional[str] = None,
+        temperature: float = 0.7,
+    ) -> Dict[str, Any]:
+        """Generate content using Gemini (fallback)."""
         model = self.get_model(model_name)
 
         generation_config = genai.GenerationConfig(temperature=temperature)
@@ -598,6 +639,22 @@ Format as JSON:
             model_name=model_name,
             system_instruction=persona_instructions,
         )
+
+
+# Model pricing (per 1M tokens) - kept for Gemini fallback
+MODEL_PRICING = {
+    "gemini-2.5-flash": {"input": 0.10, "output": 0.40},
+    "gemini-2.5-flash-lite": {"input": 0.075, "output": 0.30},
+    "gemini-2.5-pro": {"input": 1.25, "output": 10.0},
+}
+
+
+def calculate_cost(model: str, input_tokens: int, output_tokens: int) -> float:
+    """Calculate cost in USD for a given model and token counts."""
+    pricing = MODEL_PRICING.get(model, MODEL_PRICING["gemini-2.5-flash"])
+    input_cost = (input_tokens / 1_000_000) * pricing["input"]
+    output_cost = (output_tokens / 1_000_000) * pricing["output"]
+    return round(input_cost + output_cost, 6)
 
 
 # Singleton instance

@@ -157,10 +157,22 @@ export const notebooksApi = {
 // Chat API
 export const chatApi = {
   async sendMessage(notebookId: string, request: ChatRequest): Promise<ApiResponse<ChatResponse>> {
-    return fetchWithAuth(`/api/v1/notebooks/${notebookId}/chat`, {
+    // Use Next.js API route (Kimi) instead of FastAPI backend (Gemini)
+    const token = await getAuthToken();
+    const headers: HeadersInit = { 'Content-Type': 'application/json' };
+    if (token) {
+      (headers as Record<string, string>)['Authorization'] = `Bearer ${token}`;
+    }
+    const response = await fetch(`/api/notebooks/${notebookId}/chat`, {
       method: 'POST',
+      headers,
       body: JSON.stringify(request),
     });
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ detail: 'Request failed' }));
+      throw new Error(error.detail || error.error || 'Request failed');
+    }
+    return response.json();
   },
 
   async getSessions(notebookId: string) {

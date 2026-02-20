@@ -8,8 +8,11 @@ class Settings(BaseSettings):
     supabase_anon_key: str
     supabase_service_role_key: str
 
-    # Google/Gemini
+    # Google/Gemini (used for TTS, video, deep research)
     google_api_key: str
+
+    # Kimi / Moonshot AI (used for chat, summaries, study materials)
+    kimi_api_key: str = ""
 
     # AtlasCloud Video API (Wan 2.5)
     atlascloud_api_key: str = ""
