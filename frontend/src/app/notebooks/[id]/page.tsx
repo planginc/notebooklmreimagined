@@ -27,6 +27,9 @@ import {
   History,
   Settings,
   Download,
+  Youtube,
+  Link as LinkIcon,
+  ExternalLink,
 } from 'lucide-react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState, useRef } from 'react';
@@ -38,16 +41,17 @@ import { ChatPanel } from '@/components/chat/chat-panel';
 // Study viewers
 
 // Studio viewers
-import { VideoPlayer } from '@/components/studio/video-player';
-import { ResearchReport } from '@/components/studio/research-report';
-import { InfographicViewer } from '@/components/studio/infographic-viewer';
 
 // Notebook settings
 import { NotebookSettingsDialog, NotebookSettings } from '@/components/notebook/notebook-settings';
 import { ThreePanelLayout } from '@/components/panels/three-panel-layout';
+import { SourceViewerContent } from '@/components/sources/source-viewer-content';
 import { SourcesPanel } from '@/components/sources/sources-panel';
 import { AudioPlayer } from '@/components/studio/audio-player';
+import { InfographicViewer } from '@/components/studio/infographic-viewer';
+import { ResearchReport } from '@/components/studio/research-report';
 import { StudioPanel, ExportOptionsState } from '@/components/studio/studio-panel';
+import { VideoPlayer } from '@/components/studio/video-player';
 import { FAQViewer } from '@/components/study/faq-viewer';
 import { FlashcardViewer } from '@/components/study/flashcard-viewer';
 import { MindMapViewer } from '@/components/study/mind-map-viewer';
@@ -1748,51 +1752,89 @@ export default function NotebookPage() {
         />
       </div>
 
-      {/* Source Preview Dialog */}
-      <Dialog open={!!viewingSource} onOpenChange={(open) => !open && setViewingSource(null)}>
-        <DialogContent className="border-[rgba(255,255,255,0.1)] bg-[var(--bg-secondary)] sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-3 text-[var(--text-primary)]">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--bg-tertiary)]">
-                <FileText className="h-5 w-5" />
+      {/* Source Viewer Sheet */}
+      <Sheet open={!!viewingSource} onOpenChange={(open) => !open && setViewingSource(null)}>
+        <SheetContent
+          side="left"
+          className="w-full border-[rgba(255,255,255,0.1)] bg-[var(--bg-secondary)] p-0 sm:max-w-2xl"
+        >
+          <div className="flex h-full flex-col">
+            {/* Header */}
+            <SheetHeader className="border-b border-[rgba(255,255,255,0.1)] p-5">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[var(--bg-tertiary)]">
+                  {viewingSource?.type === 'youtube' ? (
+                    <Youtube className="h-5 w-5 text-[var(--source-video)]" />
+                  ) : viewingSource?.type === 'url' ? (
+                    <LinkIcon className="h-5 w-5 text-[var(--source-web)]" />
+                  ) : (
+                    <FileText className="h-5 w-5 text-[var(--source-pdf)]" />
+                  )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <SheetTitle className="truncate text-[var(--text-primary)]">
+                    {viewingSource?.name}
+                  </SheetTitle>
+                  <SheetDescription className="mt-0.5 flex items-center gap-2 text-xs text-[var(--text-tertiary)]">
+                    <span className="capitalize">{viewingSource?.type}</span>
+                    {viewingSource?.file_size_bytes && (
+                      <>
+                        <span>·</span>
+                        <span>{(viewingSource.file_size_bytes / 1024).toFixed(0)} KB</span>
+                      </>
+                    )}
+                    {viewingSource?.token_count && (
+                      <>
+                        <span>·</span>
+                        <span>{viewingSource.token_count.toLocaleString()} tokens</span>
+                      </>
+                    )}
+                  </SheetDescription>
+                </div>
+                <button
+                  onClick={() => {
+                    if (viewingSource) {
+                      window.open(`/sources/${viewingSource.id}`, '_blank', 'width=900,height=700');
+                      setViewingSource(null);
+                    }
+                  }}
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-[var(--text-tertiary)] transition-colors hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)]"
+                  title="Open in new window"
+                >
+                  <ExternalLink className="h-4 w-4" />
+                </button>
               </div>
-              {viewingSource?.name}
-            </DialogTitle>
-            <DialogDescription className="text-[var(--text-secondary)]">
-              {viewingSource?.type} source
-            </DialogDescription>
-          </DialogHeader>
+            </SheetHeader>
 
-          {viewingSource?.metadata &&
-            (() => {
-              const meta = viewingSource.metadata as Record<string, unknown>;
-              if (viewingSource.type === 'text' && meta.content) {
-                return (
-                  <div className="max-h-64 overflow-y-auto rounded-xl bg-[var(--bg-tertiary)] p-4 text-sm">
-                    <p className="whitespace-pre-wrap text-[var(--text-secondary)]">
-                      {String(meta.content)}
-                    </p>
-                  </div>
-                );
-              }
-              if ((viewingSource.type === 'youtube' || viewingSource.type === 'url') && meta.url) {
-                return (
-                  <div className="max-h-64 overflow-y-auto rounded-xl bg-[var(--bg-tertiary)] p-4 text-sm">
-                    <a
-                      href={String(meta.url)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="break-all text-[var(--accent-primary)] hover:underline"
-                    >
-                      {String(meta.url)}
-                    </a>
-                  </div>
-                );
-              }
-              return null;
-            })()}
-        </DialogContent>
-      </Dialog>
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto p-5">
+              {viewingSource && (
+                <SourceViewerContent
+                  source={viewingSource}
+                  onReprocessed={() => {
+                    invalidate.invalidateSources(notebookId);
+                    // Close and reopen to show updated data
+                    const sourceId = viewingSource.id;
+                    setViewingSource(null);
+                    setTimeout(() => {
+                      // Re-fetch the source to get updated data
+                      const supabase = createClient();
+                      supabase
+                        .from('sources')
+                        .select('*')
+                        .eq('id', sourceId)
+                        .single()
+                        .then(({ data }) => {
+                          if (data) setViewingSource(data as Source);
+                        });
+                    }, 500);
+                  }}
+                />
+              )}
+            </div>
+          </div>
+        </SheetContent>
+      </Sheet>
 
       {/* Add Note Dialog */}
       <Dialog open={addNoteOpen} onOpenChange={setAddNoteOpen}>

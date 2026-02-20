@@ -262,10 +262,12 @@ export function SourcesPanel({
                         ? 'bg-[var(--accent-primary)]/10 ring-1 ring-[var(--accent-primary)]/30'
                         : 'hover:bg-[var(--bg-tertiary)]'
                     } `}
-                    onClick={() => onToggleSource(source.id)}
+                    onClick={() => onViewSource(source)}
                   >
                     <Checkbox
                       checked={selectedSources.has(source.id)}
+                      onClick={(e) => e.stopPropagation()}
+                      onCheckedChange={() => onToggleSource(source.id)}
                       className="border-[var(--text-tertiary)] data-[state=checked]:border-[var(--accent-primary)] data-[state=checked]:bg-[var(--accent-primary)]"
                     />
 
@@ -340,7 +342,7 @@ export function SourcesPanel({
 
       {/* Add Source Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="border-[rgba(255,255,255,0.1)] bg-[var(--bg-secondary)] sm:max-w-md">
+        <DialogContent className="flex max-h-[85vh] flex-col border-[rgba(255,255,255,0.1)] bg-[var(--bg-secondary)] sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="text-[var(--text-primary)]">Add Source</DialogTitle>
             <DialogDescription className="text-[var(--text-secondary)]">
@@ -351,7 +353,7 @@ export function SourcesPanel({
           <Tabs
             value={sourceType}
             onValueChange={(v) => setSourceType(v as typeof sourceType)}
-            className="mt-2"
+            className="mt-2 min-h-0 flex-1 overflow-y-auto"
           >
             <TabsList className="grid w-full grid-cols-4 rounded-xl bg-[var(--bg-tertiary)] p-1">
               <TabsTrigger
@@ -491,14 +493,14 @@ export function SourcesPanel({
                   value={sourceInput}
                   onChange={(e) => setSourceInput(e.target.value)}
                   rows={6}
-                  className="resize-none rounded-lg border-[rgba(255,255,255,0.1)] bg-[var(--bg-tertiary)] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:border-[var(--accent-primary)]"
+                  className="max-h-[300px] resize-none overflow-y-auto rounded-lg border-[rgba(255,255,255,0.1)] bg-[var(--bg-tertiary)] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:border-[var(--accent-primary)]"
                 />
               </div>
             </TabsContent>
           </Tabs>
 
           {sourceType !== 'file' && (
-            <DialogFooter className="mt-4">
+            <DialogFooter className="mt-4 shrink-0">
               <Button
                 onClick={handleAddSource}
                 disabled={isAdding || !sourceInput.trim()}
