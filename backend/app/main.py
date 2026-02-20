@@ -26,6 +26,7 @@ app.add_middleware(GZipMiddleware, minimum_size=1000)
 cors_origins = [
     "https://frontend-ebon-kappa-14.vercel.app",
     "https://notebooklm-reimagined.vercel.app",
+    "https://api-production-410d5.up.railway.app",
     "http://localhost:3000",
     "http://localhost:3001",
 ]

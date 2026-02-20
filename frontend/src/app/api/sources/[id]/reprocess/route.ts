@@ -52,7 +52,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     }
 
     // Call the FastAPI backend reprocess endpoint
-    const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'https://backend-nine-beta-38.vercel.app';
+    const backendUrl =
+      process.env.NEXT_PUBLIC_API_URL || 'https://api-production-410d5.up.railway.app';
     const reprocessUrl = `${backendUrl}/api/v1/notebooks/${source.notebook_id}/sources/${sourceId}/reprocess`;
 
     const backendResponse = await fetch(reprocessUrl, {

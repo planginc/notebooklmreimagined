@@ -10,7 +10,6 @@ import { ErrorDialog, SuccessDialog } from '@/components/ui/error-dialog';
 import { Input } from '@/components/ui/input';
 import { createClient } from '@/lib/supabase';
 
-
 interface Profile {
   id: string;
   display_name: string | null;
@@ -55,7 +54,7 @@ export default function ProfilePage() {
     setSuccessDialog({ open: true, title, message });
   };
 
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://notebooklm-api.vercel.app';
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://api-production-410d5.up.railway.app';
 
   useEffect(() => {
     loadProfile();

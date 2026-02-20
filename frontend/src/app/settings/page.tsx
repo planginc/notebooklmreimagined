@@ -1,6 +1,5 @@
 'use client';
 
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Key,
   Plus,
@@ -24,17 +23,11 @@ import {
   GraduationCap,
   ExternalLink,
 } from 'lucide-react';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
+
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -47,6 +40,14 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { apiKeysApi, ApiKey, ApiKeyWithSecret } from '@/lib/api';
 import { createClient } from '@/lib/supabase';
@@ -186,7 +187,7 @@ export default function SettingsPage() {
 
   const router = useRouter();
   const supabase = createClient();
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://notebooklm-api.vercel.app';
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://api-production-410d5.up.railway.app';
 
   useEffect(() => {
     checkAuthAndLoadKeys();
@@ -477,7 +478,7 @@ Data:
                 header:
               </p>
               <pre className="overflow-x-auto rounded bg-[var(--bg-tertiary)] p-3 text-sm text-[var(--text-secondary)]">
-                {`curl -X POST https://notebooklm-api.vercel.app/api/v1/notebooks/{id}/chat \\
+                {`curl -X POST https://api-production-410d5.up.railway.app/api/v1/notebooks/{id}/chat \\
   -H "X-API-Key: nb_live_your_key_here" \\
   -H "Content-Type: application/json" \\
   -d '{"message": "What are the key findings?"}'`}

@@ -73,7 +73,7 @@ NEXT_PUBLIC_API_URL=http://localhost:8000  # FastAPI backend URL
 
 **Critical**: This project has TWO API layers that must stay in sync:
 
-1. **FastAPI backend** (`backend/app/routers/`) — The primary API, deployed to Vercel as a Python serverless function via `backend/api/index.py` + `backend/vercel.json`. Used by external consumers and API key auth.
+1. **FastAPI backend** (`backend/app/routers/`) — The primary API, deployed to Railway as a persistent Python server (uvicorn). Used by external consumers and API key auth.
 
 2. **Next.js API routes** (`frontend/src/app/api/`) — Frontend-side API routes that talk directly to Supabase and Gemini. Used by the web UI via JWT auth.
 
@@ -112,8 +112,9 @@ Common files that share source content extraction patterns (update ALL when fixi
 
 ```
 backend/
-├── api/index.py           # Vercel serverless entry point (wraps FastAPI via Mangum)
-├── vercel.json            # Vercel routing config
+├── Procfile               # Railway start command (uvicorn)
+├── api/index.py           # Legacy Vercel entry point (unused on Railway)
+├── vercel.json            # Legacy Vercel config (unused on Railway)
 ├── app/
 │   ├── main.py            # FastAPI app, middleware, router registration
 │   ├── config.py          # Settings via pydantic-settings (reads .env)
@@ -147,7 +148,7 @@ open-notebook/             # Alternative notebook implementation
 | Database | Supabase PostgreSQL + Row Level Security |
 | Auth | Supabase Auth (JWT) + Custom API Keys |
 | File Storage | Supabase Storage |
-| Backend API | FastAPI (Python 3.11+), deployed as Vercel serverless |
+| Backend API | FastAPI (Python 3.11+), deployed on Railway |
 | Frontend | Next.js 16, React 19, TypeScript, Tailwind v4, shadcn/ui |
 | State | @tanstack/react-query |
 | AI/RAG | Gemini API (File Search, TTS, Veo, Deep Research) |
@@ -200,20 +201,20 @@ mcp__claude-in-chrome__read_page          # Get accessibility tree
 mcp__claude-in-chrome__find               # Find elements by description
 ```
 
-## Deployment (Vercel)
+## Deployment
 
-| Service | URL |
-|---------|-----|
-| Backend API | https://backend-nine-beta-38.vercel.app |
-| Backend Docs | https://backend-nine-beta-38.vercel.app/docs |
-| Frontend | https://frontend-ebon-kappa-14.vercel.app |
+| Service | Platform | URL |
+|---------|----------|-----|
+| Backend API | Railway | https://api-production-410d5.up.railway.app |
+| Backend Docs | Railway | https://api-production-410d5.up.railway.app/docs |
+| Frontend | Vercel | https://frontend-ebon-kappa-14.vercel.app |
 
 Deploy commands:
 ```bash
-# Backend
-cd backend && vercel --prod
+# Backend (Railway) — from backend/ directory
+RAILWAY_CONFIG_DIR=~/.railway railway up
 
-# Frontend
+# Frontend (Vercel) — from frontend/ directory
 cd frontend && vercel --prod
 ```
 

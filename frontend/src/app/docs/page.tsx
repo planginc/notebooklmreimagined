@@ -67,7 +67,7 @@ function Endpoint({
 }: EndpointProps) {
   const [expanded, setExpanded] = useState(false);
 
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://notebooklm-api.vercel.app';
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://api-production-410d5.up.railway.app';
   const fullPath = `${baseUrl}${path}`;
 
   let curlCommand = `curl -X ${method} "${fullPath}" \\
@@ -224,7 +224,7 @@ export default function ApiDocsPage() {
                 Example Request
               </h4>
               <CodeBlock
-                code={`curl -X GET "https://notebooklm-api.vercel.app/api/v1/notebooks" \\
+                code={`curl -X GET "https://api-production-410d5.up.railway.app/api/v1/notebooks" \\
   -H "X-API-Key: nb_live_your_api_key_here"`}
               />
             </div>
@@ -366,7 +366,7 @@ export default function ApiDocsPage() {
               description="Upload a file (PDF, DOCX, TXT)"
               notes="Use multipart/form-data with a 'file' field"
               requestBody={`# Use multipart form data:
-# curl -X POST "https://notebooklm-api.vercel.app/api/v1/notebooks/{notebook_id}/sources" \\
+# curl -X POST "https://api-production-410d5.up.railway.app/api/v1/notebooks/{notebook_id}/sources" \\
 #   -H "X-API-Key: YOUR_API_KEY" \\
 #   -F "file=@/path/to/document.pdf"`}
             />

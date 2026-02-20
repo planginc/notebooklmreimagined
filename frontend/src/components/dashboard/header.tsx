@@ -53,7 +53,8 @@ export function DashboardHeader({
         } = await supabase.auth.getSession();
         if (!session) return;
 
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://notebooklm-api.vercel.app';
+        const apiUrl =
+          process.env.NEXT_PUBLIC_API_URL || 'https://api-production-410d5.up.railway.app';
         const response = await fetch(`${apiUrl}/api/v1/profile`, {
           headers: {
             Authorization: `Bearer ${session.access_token}`,
