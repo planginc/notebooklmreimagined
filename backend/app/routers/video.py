@@ -34,7 +34,7 @@ async def get_sources_content(notebook_id: UUID, source_ids: Optional[List[UUID]
     """Get content from sources."""
     supabase = get_supabase_client()
 
-    query = supabase.table("sources").select("*").eq("notebook_id", str(notebook_id)).eq("status", "ready")
+    query = supabase.table("sources").select("*").eq("notebook_id", str(notebook_id)).in_("status", ["ready", "completed"])
 
     if source_ids:
         query = query.in_("id", [str(sid) for sid in source_ids])

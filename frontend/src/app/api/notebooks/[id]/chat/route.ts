@@ -286,7 +286,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       .from('sources')
       .select('*')
       .eq('notebook_id', notebookId)
-      .eq('status', 'ready')
+      .in('status', ['ready', 'completed'])
       .order('created_at', { ascending: false });
 
     if (source_ids && source_ids.length > 0) {

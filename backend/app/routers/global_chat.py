@@ -63,7 +63,7 @@ async def get_sources_from_notebooks(
             supabase.table("sources")
             .select("*")
             .eq("notebook_id", notebook_id)
-            .eq("status", "ready")
+            .in_("status", ["ready", "completed"])
             .limit(max_per_notebook)
             .execute()
         )
