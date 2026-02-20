@@ -454,6 +454,7 @@ export default function Dashboard() {
               value={renamingName}
               onChange={(e) => setRenamingName(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && saveRename()}
+              maxLength={50}
               autoFocus
               className="h-11 rounded-xl border-[rgba(255,255,255,0.1)] bg-[var(--bg-tertiary)] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:border-[var(--accent-primary)]"
             />

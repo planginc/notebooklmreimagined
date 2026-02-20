@@ -49,7 +49,7 @@ export function NotebookCard({
   onRename,
   onToggleFeatured,
 }: NotebookCardProps) {
-  const CardContent = () => (
+  const cardContent = (
     <motion.div
       whileHover={{ scale: 1.02 }}
       whileTap={{ scale: 0.98 }}
@@ -58,11 +58,11 @@ export function NotebookCard({
     >
       {/* Header */}
       <div className="mb-4 flex items-start justify-between">
-        <div className="flex items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--bg-tertiary)] text-2xl">
+        <div className="flex min-w-0 flex-1 items-center gap-3">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[var(--bg-tertiary)] text-2xl">
             {emoji}
           </div>
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <h3 className="truncate text-base font-semibold text-[var(--text-primary)]">{name}</h3>
             <div className="mt-0.5 flex items-center gap-2">
               <span className="text-sm text-[var(--text-tertiary)]">
@@ -82,7 +82,7 @@ export function NotebookCard({
             <Button
               variant="ghost"
               size="sm"
-              className="h-8 w-8 p-0 opacity-0 transition-opacity group-hover:opacity-100"
+              className="h-8 w-8 shrink-0 p-0 opacity-0 transition-opacity group-hover:opacity-100"
             >
               <MoreHorizontal className="h-4 w-4 text-[var(--text-secondary)]" />
             </Button>
@@ -158,9 +158,7 @@ export function NotebookCard({
 
   return (
     <ContextMenu>
-      <ContextMenuTrigger>
-        <CardContent />
-      </ContextMenuTrigger>
+      <ContextMenuTrigger>{cardContent}</ContextMenuTrigger>
       <ContextMenuContent className="w-48 border-[rgba(255,255,255,0.1)] bg-[var(--bg-secondary)]">
         <ContextMenuItem onClick={() => onOpen(id)} className="cursor-pointer">
           Open Notebook
