@@ -4,7 +4,7 @@ import { User } from '@supabase/supabase-js';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, BookOpen, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState, useMemo } from 'react';
+import { useCallback, useEffect, useState, useMemo } from 'react';
 import { toast } from 'sonner';
 
 import { FeaturedCarousel } from '@/components/dashboard/featured-carousel';
@@ -37,8 +37,32 @@ export default function Dashboard() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('recent');
   const [searchQuery, setSearchQuery] = useState('');
+  const [renameDialogOpen, setRenameDialogOpen] = useState(false);
+  const [renamingNotebookId, setRenamingNotebookId] = useState<string | null>(null);
+  const [renamingName, setRenamingName] = useState('');
   const router = useRouter();
   const supabase = createClient();
+
+  const fetchNotebooks = useCallback(async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('notebooks')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Failed to load notebooks:', error);
+        toast.error('Failed to load notebooks');
+      } else {
+        setNotebooks(data || []);
+      }
+    } catch (e) {
+      console.error('Network error loading notebooks:', e);
+      toast.error('Network error - please check your connection');
+    }
+    setLoading(false);
+  }, [supabase]);
 
   useEffect(() => {
     const checkUser = async () => {
@@ -59,28 +83,7 @@ export default function Dashboard() {
       }
     };
     checkUser();
-  }, []);
-
-  const fetchNotebooks = async () => {
-    setLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from('notebooks')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        console.error('Failed to load notebooks:', error);
-        toast.error('Failed to load notebooks');
-      } else {
-        setNotebooks(data || []);
-      }
-    } catch (e) {
-      console.error('Network error loading notebooks:', e);
-      toast.error('Network error - please check your connection');
-    }
-    setLoading(false);
-  };
+  }, [fetchNotebooks, router, supabase.auth]);
 
   const createNotebook = async () => {
     if (!newNotebookName.trim()) return;
@@ -129,6 +132,37 @@ export default function Dashboard() {
       setNotebooks(notebooks.filter((n) => n.id !== id));
       toast.success('Notebook deleted');
     }
+  };
+
+  const startRename = (id: string) => {
+    const notebook = notebooks.find((n) => n.id === id);
+    if (!notebook) return;
+    setRenamingNotebookId(id);
+    setRenamingName(notebook.name);
+    setRenameDialogOpen(true);
+  };
+
+  const saveRename = async () => {
+    if (!renamingNotebookId || !renamingName.trim()) return;
+
+    const { error } = await supabase
+      .from('notebooks')
+      .update({ name: renamingName.trim() })
+      .eq('id', renamingNotebookId);
+
+    if (error) {
+      toast.error('Failed to rename notebook');
+    } else {
+      setNotebooks(
+        notebooks.map((n) =>
+          n.id === renamingNotebookId ? { ...n, name: renamingName.trim() } : n
+        )
+      );
+      toast.success('Notebook renamed');
+    }
+    setRenameDialogOpen(false);
+    setRenamingNotebookId(null);
+    setRenamingName('');
   };
 
   const toggleFeatured = async (id: string) => {
@@ -307,6 +341,7 @@ export default function Dashboard() {
                     isFeatured={notebook.is_featured}
                     onOpen={(id) => router.push(`/notebooks/${id}`)}
                     onDelete={deleteNotebook}
+                    onRename={startRename}
                     onToggleFeatured={toggleFeatured}
                   />
                 </motion.div>
@@ -390,6 +425,57 @@ export default function Dashboard() {
             >
               {creating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Create Notebook
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Rename Notebook Dialog */}
+      <Dialog
+        open={renameDialogOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setRenameDialogOpen(false);
+            setRenamingNotebookId(null);
+            setRenamingName('');
+          }
+        }}
+      >
+        <DialogContent className="border-[rgba(255,255,255,0.1)] bg-[var(--bg-secondary)] sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-[var(--text-primary)]">Rename Notebook</DialogTitle>
+            <DialogDescription className="text-[var(--text-secondary)]">
+              Enter a new name for this notebook.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Input
+              placeholder="Notebook name"
+              value={renamingName}
+              onChange={(e) => setRenamingName(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && saveRename()}
+              autoFocus
+              className="h-11 rounded-xl border-[rgba(255,255,255,0.1)] bg-[var(--bg-tertiary)] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:border-[var(--accent-primary)]"
+            />
+          </div>
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setRenameDialogOpen(false);
+                setRenamingNotebookId(null);
+                setRenamingName('');
+              }}
+              className="rounded-xl border-[rgba(255,255,255,0.1)] text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)]"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={saveRename}
+              disabled={!renamingName.trim()}
+              className="btn-hover rounded-xl bg-[var(--accent-primary)] text-white hover:bg-[var(--accent-primary)]/90"
+            >
+              Save
             </Button>
           </DialogFooter>
         </DialogContent>
