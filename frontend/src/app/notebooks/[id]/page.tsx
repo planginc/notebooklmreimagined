@@ -1575,42 +1575,44 @@ export default function NotebookPage() {
       <motion.header
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="sticky top-0 z-50 flex h-14 shrink-0 items-center gap-4 border-b border-[rgba(255,255,255,0.1)] bg-[var(--bg-secondary)] px-4"
+        className="sticky top-0 z-50 flex h-14 shrink-0 items-center gap-2 border-b border-[rgba(255,255,255,0.1)] bg-[var(--bg-secondary)] px-2 sm:gap-4 sm:px-4"
       >
         <Button
           variant="ghost"
           size="icon"
           onClick={() => router.push('/')}
-          className="h-9 w-9 rounded-lg text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)]"
+          className="h-9 w-9 shrink-0 rounded-lg text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)]"
         >
           <ArrowLeft className="h-4 w-4" />
         </Button>
 
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--bg-tertiary)] text-xl">
+        <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[var(--bg-tertiary)] text-lg sm:h-10 sm:w-10 sm:rounded-xl sm:text-xl">
             {notebook?.emoji}
           </div>
-          <div>
-            <h1 className="font-semibold text-[var(--text-primary)]">{notebook?.name}</h1>
+          <div className="min-w-0">
+            <h1 className="truncate text-sm font-semibold text-[var(--text-primary)] sm:text-base">
+              {notebook?.name}
+            </h1>
             {notebook?.description && (
-              <p className="line-clamp-1 max-w-[300px] text-xs text-[var(--text-tertiary)]">
+              <p className="line-clamp-1 hidden max-w-[300px] text-xs text-[var(--text-tertiary)] sm:block">
                 {notebook.description}
               </p>
             )}
           </div>
         </div>
 
-        <div className="ml-auto flex items-center gap-2">
-          <Badge className="border-0 bg-[var(--bg-tertiary)] text-xs text-[var(--text-secondary)]">
+        <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-2">
+          <Badge className="hidden border-0 bg-[var(--bg-tertiary)] text-xs text-[var(--text-secondary)] sm:inline-flex">
             {sources.length} source{sources.length !== 1 ? 's' : ''}
           </Badge>
           {selectedSources.size > 0 && (
-            <Badge className="border-0 bg-[var(--accent-primary)]/20 text-xs text-[var(--accent-primary)]">
+            <Badge className="hidden border-0 bg-[var(--accent-primary)]/20 text-xs text-[var(--accent-primary)] sm:inline-flex">
               {selectedSources.size} selected
             </Badge>
           )}
           {notebookSettings?.persona?.enabled && (
-            <Badge className="border-0 bg-purple-500/20 text-xs text-purple-400">
+            <Badge className="hidden border-0 bg-purple-500/20 text-xs text-purple-400 sm:inline-flex">
               {notebookSettings.persona.name || 'Custom Persona'}
             </Badge>
           )}
@@ -1618,7 +1620,7 @@ export default function NotebookPage() {
             variant="ghost"
             size="sm"
             onClick={() => setSettingsOpen(true)}
-            className="h-9 gap-2 rounded-lg px-3 text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)]"
+            className="h-9 gap-2 rounded-lg px-2 text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)] sm:px-3"
           >
             <Settings className="h-4 w-4" />
             <span className="hidden sm:inline">Settings</span>
@@ -1627,7 +1629,7 @@ export default function NotebookPage() {
             variant="ghost"
             size="sm"
             onClick={() => router.push(`/notebooks/${notebookId}/history`)}
-            className="h-9 gap-2 rounded-lg px-3 text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)]"
+            className="h-9 gap-2 rounded-lg px-2 text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)] sm:px-3"
           >
             <History className="h-4 w-4" />
             <span className="hidden sm:inline">History</span>
