@@ -661,88 +661,110 @@ export default function NotebookPage() {
     }
   };
 
-  // Source handlers
+  // Source handlers — routes all source creation through the backend API
+  // so content extraction (PDF text, YouTube transcripts, URL scraping)
+  // and source guide generation happen automatically.
   const handleAddSource = async (
     type: string,
     data: { input: string; name?: string; file?: File }
   ) => {
     setUploading(true);
 
-    if (type === 'file') {
-      // Handle file upload - file is passed from the sources panel
-      const file = data.file;
-      if (file) {
-        const fileExt = file.name.split('.').pop()?.toLowerCase();
-        const filePath = `${user?.id}/${notebookId}/${Date.now()}.${fileExt}`;
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://api-production-410d5.up.railway.app';
 
-        const { error: uploadError } = await supabase.storage
-          .from('sources')
-          .upload(filePath, file);
+    // Get auth token for backend API
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    const token = session?.access_token;
 
-        if (uploadError) {
-          console.error('Upload error:', uploadError);
+    if (!token) {
+      console.error('No auth token available');
+      setUploading(false);
+      return;
+    }
 
+    try {
+      if (type === 'file') {
+        const file = data.file;
+        if (!file) {
           setUploading(false);
           return;
         }
 
-        const { data: sourceData, error } = await supabase
-          .from('sources')
-          .insert({
-            notebook_id: notebookId,
-            type: fileExt === 'pdf' ? 'pdf' : fileExt === 'docx' ? 'docx' : 'txt',
-            name: file.name,
-            status: 'ready',
-            file_path: filePath,
-            original_filename: file.name,
-            mime_type: file.type,
-            file_size_bytes: file.size,
-          })
-          .select()
-          .single();
+        // Send file to backend API which handles storage upload + text extraction + guide generation
+        const formData = new FormData();
+        formData.append('file', file);
 
-        if (error) {
-          console.error('Source creation error:', error);
+        const response = await fetch(`${apiUrl}/api/v1/notebooks/${notebookId}/sources`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}` },
+          body: formData,
+        });
+
+        if (!response.ok) {
+          const err = await response.json().catch(() => ({ detail: 'Upload failed' }));
+          console.error('Backend upload error:', err);
+        } else {
+          invalidate.invalidateSources(notebookId);
+        }
+      } else if (type === 'youtube') {
+        // Backend extracts transcript via youtube-transcript-api + generates source guide
+        const response = await fetch(`${apiUrl}/api/v1/notebooks/${notebookId}/sources/youtube`, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ url: data.input, name: data.name || undefined }),
+        });
+
+        if (!response.ok) {
+          const err = await response.json().catch(() => ({ detail: 'Failed' }));
+          console.error('Backend YouTube source error:', err);
+        } else {
+          invalidate.invalidateSources(notebookId);
+        }
+      } else if (type === 'url') {
+        // Backend fetches URL content via BeautifulSoup + generates source guide
+        const response = await fetch(`${apiUrl}/api/v1/notebooks/${notebookId}/sources/url`, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ url: data.input, name: data.name || undefined }),
+        });
+
+        if (!response.ok) {
+          const err = await response.json().catch(() => ({ detail: 'Failed' }));
+          console.error('Backend URL source error:', err);
+        } else {
+          invalidate.invalidateSources(notebookId);
+        }
+      } else if (type === 'text') {
+        // Backend generates source guide from pasted text
+        const response = await fetch(`${apiUrl}/api/v1/notebooks/${notebookId}/sources/text`, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            content: data.input,
+            name: data.name || 'Pasted Text',
+          }),
+        });
+
+        if (!response.ok) {
+          const err = await response.json().catch(() => ({ detail: 'Failed' }));
+          console.error('Backend text source error:', err);
         } else {
           invalidate.invalidateSources(notebookId);
         }
       }
-    } else {
-      let sourceData: Partial<Source> = {
-        notebook_id: notebookId,
-        status: 'ready',
-      };
-
-      if (type === 'youtube') {
-        sourceData = {
-          ...sourceData,
-          type: 'youtube',
-          name: data.name || `YouTube: ${data.input}`,
-          metadata: { url: data.input },
-        };
-      } else if (type === 'url') {
-        sourceData = {
-          ...sourceData,
-          type: 'url',
-          name: data.name || data.input,
-          metadata: { url: data.input },
-        };
-      } else if (type === 'text') {
-        sourceData = {
-          ...sourceData,
-          type: 'text',
-          name: data.name || 'Pasted Text',
-          metadata: { content: data.input },
-        };
-      }
-
-      const { error } = await supabase.from('sources').insert(sourceData).select().single();
-
-      if (error) {
-        console.error('Source creation error:', error);
-      } else {
-        invalidate.invalidateSources(notebookId);
-      }
+    } catch (error) {
+      console.error('Source creation error:', error);
     }
 
     setUploading(false);

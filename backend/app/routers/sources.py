@@ -118,6 +118,28 @@ def extract_pdf_text(content: bytes) -> str:
         return ""
 
 
+def extract_docx_text(content: bytes) -> str:
+    """Extract text from a DOCX file."""
+    try:
+        from docx import Document
+        import io
+    except ImportError:
+        print("python-docx not installed, DOCX extraction unavailable")
+        return ""
+
+    try:
+        doc = Document(io.BytesIO(content))
+        text_parts = []
+        for paragraph in doc.paragraphs:
+            if paragraph.text.strip():
+                text_parts.append(paragraph.text)
+        text = "\n\n".join(text_parts)
+        return text[:100000]
+    except Exception as e:
+        print(f"DOCX extraction failed: {e}")
+        return ""
+
+
 async def generate_source_guide(content: str) -> dict:
     """Generate a source guide (summary, topics, questions) from content."""
     if not content or len(content.strip()) < 50:
@@ -203,6 +225,8 @@ async def upload_source(
             extracted_text = content.decode("utf-8", errors="ignore")
         elif source_type == "pdf":
             extracted_text = extract_pdf_text(content)
+        elif source_type == "docx":
+            extracted_text = extract_docx_text(content)
 
         if extracted_text:
             guide_result = await generate_source_guide(extracted_text)
@@ -498,6 +522,15 @@ async def reprocess_source(
                     metadata["content"] = extracted_text[:100000]
             except Exception as e:
                 print(f"PDF download/extraction failed: {e}")
+
+        elif source_type == "docx" and source.get("file_path"):
+            try:
+                file_data = supabase.storage.from_("sources").download(source["file_path"])
+                extracted_text = extract_docx_text(file_data)
+                if extracted_text:
+                    metadata["content"] = extracted_text[:100000]
+            except Exception as e:
+                print(f"DOCX download/extraction failed: {e}")
 
         elif source_type == "txt" and source.get("file_path"):
             try:
