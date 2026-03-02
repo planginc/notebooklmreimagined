@@ -49,6 +49,7 @@ import { SourceViewerContent } from '@/components/sources/source-viewer-content'
 import { SourcesPanel } from '@/components/sources/sources-panel';
 import { AudioPlayer } from '@/components/studio/audio-player';
 import { InfographicViewer } from '@/components/studio/infographic-viewer';
+import { NotesPanel } from '@/components/studio/notes-panel';
 import { ResearchReport } from '@/components/studio/research-report';
 import { StudioPanel, ExportOptionsState } from '@/components/studio/studio-panel';
 import { VideoPlayer } from '@/components/studio/video-player';
@@ -159,6 +160,7 @@ export default function NotebookPage() {
   const [noteTitle, setNoteTitle] = useState('');
   const [noteContent, setNoteContent] = useState('');
   const [savingNote, setSavingNote] = useState(false);
+  const [notesSheetOpen, setNotesSheetOpen] = useState(false);
 
   // Settings state
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -905,6 +907,59 @@ export default function NotebookPage() {
       setAddNoteOpen(false);
     }
     setSavingNote(false);
+  };
+
+  // Notes panel handlers
+  const handleNoteSave = async (noteId: string, title: string, content: string) => {
+    const { error } = await supabase
+      .from('notebook_notes')
+      .update({ title, content, updated_at: new Date().toISOString() })
+      .eq('id', noteId);
+    if (error) {
+      console.error('Update note error:', error);
+    } else {
+      invalidate.invalidateNotes(notebookId);
+    }
+  };
+
+  const handleNoteCreate = async (title: string, content: string) => {
+    const { error } = await supabase
+      .from('notebook_notes')
+      .insert({
+        notebook_id: notebookId,
+        type: 'written',
+        title: title || 'Untitled Note',
+        content,
+        tags: [],
+      })
+      .select()
+      .single();
+    if (error) {
+      console.error('Create note error:', error);
+    } else {
+      invalidate.invalidateNotes(notebookId);
+    }
+  };
+
+  const handleNoteDelete = async (noteId: string) => {
+    const { error } = await supabase.from('notebook_notes').delete().eq('id', noteId);
+    if (error) {
+      console.error('Delete note error:', error);
+    } else {
+      invalidate.invalidateNotes(notebookId);
+    }
+  };
+
+  const handleNoteTogglePin = async (noteId: string, isPinned: boolean) => {
+    const { error } = await supabase
+      .from('notebook_notes')
+      .update({ is_pinned: isPinned })
+      .eq('id', noteId);
+    if (error) {
+      console.error('Toggle pin error:', error);
+    } else {
+      invalidate.invalidateNotes(notebookId);
+    }
   };
 
   // Audio generation
@@ -1754,6 +1809,7 @@ export default function NotebookPage() {
               }}
               notesCount={notes.length}
               onAddNote={() => setAddNoteOpen(true)}
+              onOpenNotes={() => setNotesSheetOpen(true)}
               hasGeneratedAudio={!!activeGeneratedAudio}
               hasGeneratedVideo={!!activeGeneratedVideo}
               hasGeneratedResearch={!!activeGeneratedResearch}
@@ -1902,6 +1958,37 @@ export default function NotebookPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Notes Panel Sheet */}
+      <Sheet open={notesSheetOpen} onOpenChange={setNotesSheetOpen}>
+        <SheetContent
+          className="overflow-y-auto border-[rgba(255,255,255,0.1)] bg-[var(--bg-secondary)] p-0"
+          style={{ width: 520, maxWidth: '100vw' }}
+        >
+          <div className="p-6">
+            <SheetHeader>
+              <SheetTitle className="flex items-center gap-2 text-[var(--text-primary)]">
+                <FileText className="h-5 w-5 text-amber-500" />
+                Notes
+              </SheetTitle>
+              <SheetDescription className="text-[var(--text-secondary)]">
+                {notes.length} note{notes.length !== 1 ? 's' : ''} in this notebook
+              </SheetDescription>
+            </SheetHeader>
+            <div className="mt-6">
+              <NotesPanel
+                notes={notes}
+                notebookId={notebookId}
+                onSave={handleNoteSave}
+                onCreate={handleNoteCreate}
+                onDelete={handleNoteDelete}
+                onTogglePin={handleNoteTogglePin}
+                onClose={() => setNotesSheetOpen(false)}
+              />
+            </div>
+          </div>
+        </SheetContent>
+      </Sheet>
 
       {/* Study Materials Sheet */}
       <Sheet
