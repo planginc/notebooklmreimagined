@@ -173,7 +173,6 @@ async def upload_source(
     # Determine file type
     filename = file.filename or "unknown"
     ext = filename.rsplit(".", 1)[-1].lower() if "." in filename else "txt"
-    mime_type = file.content_type or "application/octet-stream"
 
     type_map = {
         "pdf": "pdf",
@@ -184,6 +183,17 @@ async def upload_source(
         "html": "txt",
     }
     source_type = type_map.get(ext, "txt")
+
+    # Use correct MIME type based on extension (browsers often send application/octet-stream for docx)
+    mime_map = {
+        "pdf": "application/pdf",
+        "docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "doc": "application/msword",
+        "txt": "text/plain",
+        "md": "text/markdown",
+        "html": "text/html",
+    }
+    mime_type = mime_map.get(ext, file.content_type or "application/octet-stream")
 
     # Read file content
     content = await file.read()
