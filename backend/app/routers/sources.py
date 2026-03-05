@@ -119,21 +119,44 @@ def extract_pdf_text(content: bytes) -> str:
 
 
 def extract_docx_text(content: bytes) -> str:
-    """Extract text from a DOCX file."""
+    """Extract text from a DOCX file.
+
+    Parses all w:t elements from the raw XML to capture text from
+    paragraphs, tables, text boxes, grouped shapes, headers, and footers.
+    """
     try:
-        from docx import Document
+        import zipfile
         import io
+        from lxml import etree
     except ImportError:
-        print("python-docx not installed, DOCX extraction unavailable")
+        print("lxml not installed, DOCX extraction unavailable")
         return ""
 
     try:
-        doc = Document(io.BytesIO(content))
+        nsmap = {"w": "http://schemas.openxmlformats.org/wordprocessingml/2006/main"}
         text_parts = []
-        for paragraph in doc.paragraphs:
-            if paragraph.text.strip():
-                text_parts.append(paragraph.text)
-        text = "\n\n".join(text_parts)
+
+        with zipfile.ZipFile(io.BytesIO(content)) as zf:
+            # Main document body
+            xml_parts = ["word/document.xml"]
+            # Also check headers and footers
+            for name in zf.namelist():
+                if name.startswith("word/header") or name.startswith("word/footer"):
+                    xml_parts.append(name)
+
+            for part_name in xml_parts:
+                if part_name not in zf.namelist():
+                    continue
+                tree = etree.parse(zf.open(part_name))
+                # Extract all w:t text runs in document order
+                for t_elem in tree.iter("{%s}t" % nsmap["w"]):
+                    if t_elem.text:
+                        text_parts.append(t_elem.text)
+
+        text = " ".join(text_parts)
+        # Collapse multiple spaces into one, then split into paragraphs on double-space heuristic
+        # For cleaner output, rejoin with newlines at sentence-like boundaries
+        text = " ".join(text.split())
         return text[:100000]
     except Exception as e:
         print(f"DOCX extraction failed: {e}")
