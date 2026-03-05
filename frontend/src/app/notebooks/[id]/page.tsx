@@ -1,7 +1,5 @@
 'use client';
 
-// Toast notifications removed per user request
-// import { toast } from 'sonner'
 import { User } from '@supabase/supabase-js';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -35,6 +33,7 @@ import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { toast } from 'sonner';
 
 import { ChatPanel } from '@/components/chat/chat-panel';
 
@@ -1439,7 +1438,16 @@ export default function NotebookPage() {
 
       if (result.error) {
         console.error('Generation error:', result.error);
+        toast.error('Generation failed', {
+          id: `generating-${config.type}`,
+          description: result.error,
+        });
       } else if (result.data) {
+        toast.success('Done!', {
+          id: `generating-${config.type}`,
+          description: 'Your content is ready.',
+          duration: 3000,
+        });
         // Handle each type's response
         switch (config.type) {
           case 'data_table':
@@ -1467,6 +1475,11 @@ export default function NotebookPage() {
       }
     } catch (error) {
       console.error('Creative output generation failed:', error);
+      const errMsg = error instanceof Error ? error.message : 'Something went wrong.';
+      toast.error('Generation failed', {
+        id: `generating-${config.type}`,
+        description: `${errMsg} Please try again.`,
+      });
     } finally {
       if (stateKey2) setGeneratingState(stateKey2, false);
     }

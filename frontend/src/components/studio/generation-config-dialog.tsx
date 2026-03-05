@@ -9,7 +9,6 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
@@ -67,7 +66,7 @@ interface GenerationConfigDialogProps {
   isGenerating?: boolean;
 }
 
-const typeLabels: Record<GenerationType, string> = {
+export const typeLabels: Record<GenerationType, string> = {
   flashcards: 'Flashcards',
   quiz: 'Quiz',
   'study-guide': 'Study Guide',
@@ -111,7 +110,7 @@ export function GenerationConfigDialog({
     slideCount: 8,
     style: 'modern',
     sourceIds: [],
-    imageCount: 4,
+    imageCount: 2,
     imageStyle: 'infographic',
   });
 
@@ -365,81 +364,89 @@ export function GenerationConfigDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-[500px]">
+      <DialogContent className="flex max-h-[85vh] w-[calc(100vw-2rem)] flex-col overflow-hidden sm:max-w-[540px]">
         <DialogHeader>
           <DialogTitle>Generate {typeLabels[type]}</DialogTitle>
           <DialogDescription>{typeDescriptions[type]}</DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6 py-4">
-          {/* Type-specific options */}
-          {isStudyType ? renderStudyOptions() : renderCreativeOptions()}
+        <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto">
+          <div className="space-y-6 py-4">
+            {/* Type-specific options */}
+            {isStudyType ? renderStudyOptions() : renderCreativeOptions()}
 
-          {/* Focus area - for all types */}
-          <div className="space-y-3">
-            <Label htmlFor="focus">
-              Focus Area <span className="text-muted-foreground">(optional)</span>
-            </Label>
-            <Textarea
-              id="focus"
-              placeholder="e.g. 'Focus on key definitions' or 'Emphasize practical examples'"
-              value={config.focusArea}
-              onChange={(e) => setConfig((prev) => ({ ...prev, focusArea: e.target.value }))}
-              className="h-20 resize-none"
-            />
-          </div>
-
-          {/* Custom instructions - for all types */}
-          <div className="space-y-3">
-            <Label htmlFor="instructions">
-              Custom Instructions <span className="text-muted-foreground">(optional)</span>
-            </Label>
-            <Textarea
-              id="instructions"
-              placeholder="Any specific requirements or preferences..."
-              value={config.customInstructions}
-              onChange={(e) =>
-                setConfig((prev) => ({ ...prev, customInstructions: e.target.value }))
-              }
-              className="h-20 resize-none"
-            />
-          </div>
-
-          {/* Source selection */}
-          {sources.length > 0 && (
+            {/* Focus area - for all types */}
             <div className="space-y-3">
-              <Label>Sources</Label>
-              <p className="text-muted-foreground text-sm">
-                {selectedSources.length === 0
-                  ? 'Using all sources. Select specific sources to focus on:'
-                  : `Using ${selectedSources.length} of ${sources.length} sources`}
-              </p>
-              <div className="max-h-32 space-y-2 overflow-y-auto rounded-md border p-3">
-                {sources.map((source) => (
-                  <div key={source.id} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={source.id}
-                      checked={selectedSources.includes(source.id)}
-                      onCheckedChange={() => toggleSource(source.id)}
-                    />
-                    <Label
-                      htmlFor={source.id}
-                      className="cursor-pointer truncate text-sm font-normal"
-                    >
-                      {source.name}
-                    </Label>
-                  </div>
-                ))}
-              </div>
+              <Label htmlFor="focus">
+                Focus Area <span className="text-muted-foreground">(optional)</span>
+              </Label>
+              <Textarea
+                id="focus"
+                placeholder="e.g. 'Focus on key definitions' or 'Emphasize practical examples'"
+                value={config.focusArea}
+                onChange={(e) => setConfig((prev) => ({ ...prev, focusArea: e.target.value }))}
+                className="h-20 resize-none"
+              />
             </div>
-          )}
+
+            {/* Custom instructions - for all types */}
+            <div className="space-y-3">
+              <Label htmlFor="instructions">
+                Custom Instructions <span className="text-muted-foreground">(optional)</span>
+              </Label>
+              <Textarea
+                id="instructions"
+                placeholder="Any specific requirements or preferences..."
+                value={config.customInstructions}
+                onChange={(e) =>
+                  setConfig((prev) => ({ ...prev, customInstructions: e.target.value }))
+                }
+                className="h-20 resize-none"
+              />
+            </div>
+
+            {/* Source selection */}
+            {sources.length > 0 && (
+              <div className="space-y-3">
+                <Label>Sources</Label>
+                <p className="text-muted-foreground text-sm">
+                  {selectedSources.length === 0
+                    ? 'Using all sources. Select specific sources to focus on:'
+                    : `Using ${selectedSources.length} of ${sources.length} sources`}
+                </p>
+                <div className="max-h-32 space-y-2 overflow-y-auto rounded-md border p-3">
+                  {sources.map((source) => (
+                    <div key={source.id} className="flex min-w-0 items-center space-x-2">
+                      <Checkbox
+                        id={source.id}
+                        checked={selectedSources.includes(source.id)}
+                        onCheckedChange={() => toggleSource(source.id)}
+                        className="shrink-0"
+                      />
+                      <Label
+                        htmlFor={source.id}
+                        className="cursor-pointer truncate text-sm font-normal"
+                      >
+                        {source.name}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isGenerating}>
+        <div className="flex shrink-0 flex-col gap-2 border-t pt-4 sm:flex-row sm:justify-end">
+          <Button
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            disabled={isGenerating}
+            className="w-full sm:w-auto"
+          >
             Cancel
           </Button>
-          <Button onClick={handleGenerate} disabled={isGenerating}>
+          <Button onClick={handleGenerate} disabled={isGenerating} className="w-full sm:w-auto">
             {isGenerating ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -449,7 +456,7 @@ export function GenerationConfigDialog({
               'Generate'
             )}
           </Button>
-        </DialogFooter>
+        </div>
       </DialogContent>
     </Dialog>
   );

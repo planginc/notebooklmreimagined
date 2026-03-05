@@ -1,4 +1,18 @@
-import { GoogleGenerativeAI, GenerativeModel } from '@google/generative-ai';
+import { GoogleGenerativeAI, GenerativeModel, GenerateContentResult } from '@google/generative-ai';
+
+// Safely extract text from a Gemini response, throwing a clear error if empty/blocked
+function safeResponseText(result: GenerateContentResult): string {
+  const response = result.response;
+  // Check if response was blocked by safety filters
+  if (response.promptFeedback?.blockReason) {
+    throw new Error(`AI response blocked: ${response.promptFeedback.blockReason}`);
+  }
+  const text = response.text();
+  if (!text || text.trim().length === 0) {
+    throw new Error('AI returned an empty response. Please try again.');
+  }
+  return text;
+}
 
 // Initialize Gemini with API key
 const apiKey = process.env.GOOGLE_API_KEY;
@@ -46,7 +60,7 @@ Return ONLY a valid JSON array with no markdown formatting, code blocks, or extr
 ]`;
 
   const result = await model.generateContent(prompt);
-  const text = result.response.text();
+  const text = safeResponseText(result);
 
   // Parse JSON from response (handle potential markdown code blocks)
   const jsonMatch = text.match(/\[[\s\S]*\]/);
@@ -85,7 +99,7 @@ Return ONLY a valid JSON array with no markdown formatting, code blocks, or extr
 ]`;
 
   const result = await model.generateContent(prompt);
-  const text = result.response.text();
+  const text = safeResponseText(result);
 
   const jsonMatch = text.match(/\[[\s\S]*\]/);
   if (!jsonMatch) throw new Error('Invalid response format');
@@ -122,7 +136,7 @@ Return ONLY a valid JSON object with no markdown formatting, code blocks, or ext
 }`;
 
   const result = await model.generateContent(prompt);
-  const text = result.response.text();
+  const text = safeResponseText(result);
 
   const jsonMatch = text.match(/\{[\s\S]*\}/);
   if (!jsonMatch) throw new Error('Invalid response format');
@@ -156,7 +170,7 @@ Return ONLY a valid JSON array with no markdown formatting, code blocks, or extr
 ]`;
 
   const result = await model.generateContent(prompt);
-  const text = result.response.text();
+  const text = safeResponseText(result);
 
   const jsonMatch = text.match(/\[[\s\S]*\]/);
   if (!jsonMatch) throw new Error('Invalid response format');
@@ -215,7 +229,7 @@ Return ONLY a valid JSON object with no markdown formatting, code blocks, or ext
 }`;
 
   const result = await model.generateContent(prompt);
-  const text = result.response.text();
+  const text = safeResponseText(result);
 
   const jsonMatch = text.match(/\{[\s\S]*\}/);
   if (!jsonMatch) throw new Error('Invalid response format');
@@ -262,7 +276,7 @@ ${format === 'debate' ? 'Have Alex and Sam take slightly different perspectives 
 Write ONLY the dialogue, no stage directions or extra formatting. Start directly with "Alex:" on the first line.`;
 
   const result = await model.generateContent(prompt);
-  return result.response.text();
+  return safeResponseText(result);
 }
 
 // Generate video script
@@ -312,7 +326,7 @@ Include [VISUAL] tags for visual suggestions and [NARRATION] tags for spoken con
 Do NOT include any JSON formatting. Write the script as plain text with clear markers.`;
 
   const result = await model.generateContent(prompt);
-  return result.response.text();
+  return safeResponseText(result);
 }
 
 // Generate research report
@@ -362,7 +376,7 @@ List sources you would cite (note: as an AI, provide hypothetical but realistic 
 Write in an academic but accessible style. Be thorough and evidence-based.`;
 
   const result = await model.generateContent(prompt);
-  const reportContent = result.response.text();
+  const reportContent = safeResponseText(result);
 
   // Generate hypothetical but realistic citations based on the query
   const citationPrompt = `For a research report about "${query}", generate 5 realistic academic/web citations. Return ONLY a JSON array:
@@ -371,7 +385,7 @@ Write in an academic but accessible style. Be thorough and evidence-based.`;
   let citations: { title: string; url: string }[] = [];
   try {
     const citationResult = await model.generateContent(citationPrompt);
-    const citationText = citationResult.response.text();
+    const citationText = safeResponseText(citationResult);
     const jsonMatch = citationText.match(/\[[\s\S]*\]/);
     if (jsonMatch) {
       citations = JSON.parse(jsonMatch[0]);
@@ -403,7 +417,7 @@ export async function generateContent(
 
   const model = genAI.getGenerativeModel({ model: modelName });
   const result = await model.generateContent(prompt);
-  return { text: result.response.text() };
+  return { text: safeResponseText(result) };
 }
 
 // ============ STUDIO OUTPUT GENERATORS ============
@@ -459,7 +473,7 @@ Return ONLY a valid JSON object with no markdown formatting, code blocks, or ext
 }`;
 
   const result = await model.generateContent(prompt);
-  const text = result.response.text();
+  const text = safeResponseText(result);
 
   const jsonMatch = text.match(/\{[\s\S]*\}/);
   if (!jsonMatch) throw new Error('Invalid response format');
@@ -543,7 +557,7 @@ Return ONLY a valid JSON object with no markdown formatting, code blocks, or ext
 }`;
 
   const result = await model.generateContent(prompt);
-  const text = result.response.text();
+  const text = safeResponseText(result);
 
   const jsonMatch = text.match(/\{[\s\S]*\}/);
   if (!jsonMatch) throw new Error('Invalid response format');
@@ -620,7 +634,7 @@ Return ONLY a valid JSON object with no markdown formatting, code blocks, or ext
 }`;
 
   const result = await model.generateContent(prompt);
-  const text = result.response.text();
+  const text = safeResponseText(result);
 
   const jsonMatch = text.match(/\{[\s\S]*\}/);
   if (!jsonMatch) throw new Error('Invalid response format');
@@ -740,7 +754,7 @@ Return ONLY a valid JSON object with no markdown formatting, code blocks, or ext
 }`;
 
   const result = await model.generateContent(prompt);
-  const text = result.response.text();
+  const text = safeResponseText(result);
 
   const jsonMatch = text.match(/\{[\s\S]*\}/);
   if (!jsonMatch) throw new Error('Invalid response format');
@@ -1082,35 +1096,42 @@ Return ONLY a valid JSON array with no markdown formatting, code blocks, or extr
 ]`;
 
   const result = await model.generateContent(conceptPrompt);
-  const text = result.response.text();
+  const text = safeResponseText(result);
 
   const jsonMatch = text.match(/\[[\s\S]*\]/);
   if (!jsonMatch) throw new Error('Invalid response format');
 
   const concepts: { title: string; prompt: string }[] = JSON.parse(jsonMatch[0]);
 
-  // Generate images for each concept using Nano Banana Pro
-  const images: { prompt: string; imageData: string; mimeType: string; title: string }[] = [];
-
-  for (const concept of concepts.slice(0, imageCount)) {
-    try {
-      // Add a small delay between requests to avoid rate limiting
-      if (images.length > 0) {
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-      }
-
+  // Generate images in parallel to stay within serverless timeout limits
+  const imageResults = await Promise.allSettled(
+    concepts.slice(0, imageCount).map(async (concept) => {
       const image = await generateImage(concept.prompt, '1:1', '1K');
-      images.push({
+      return {
         title: concept.title,
         prompt: concept.prompt,
         imageData: image.imageData,
         mimeType: image.mimeType,
-      });
-    } catch (error) {
-      console.error(`Failed to generate image for "${concept.title}":`, error);
-      // Continue with other images even if one fails
-    }
-  }
+      };
+    })
+  );
+
+  const images = imageResults
+    .filter(
+      (
+        r
+      ): r is PromiseFulfilledResult<{
+        title: string;
+        prompt: string;
+        imageData: string;
+        mimeType: string;
+      }> => r.status === 'fulfilled'
+    )
+    .map((r) => r.value);
+
+  imageResults
+    .filter((r) => r.status === 'rejected')
+    .forEach((r) => console.error('Image generation failed:', (r as PromiseRejectedResult).reason));
 
   return {
     images,

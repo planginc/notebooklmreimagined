@@ -10,6 +10,9 @@ import {
   isGeminiConfigured,
 } from '@/lib/gemini';
 
+// Allow up to 120s for image generation (multiple sequential API calls)
+export const maxDuration = 120;
+
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -287,9 +290,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         })
         .eq('id', outputRecord.id);
 
+      const errMsg = error instanceof Error ? error.message : 'Unknown error';
       return NextResponse.json(
         {
-          error: `Failed to generate ${type.replace('_', ' ')}. Please try again.`,
+          error: `Failed to generate ${type.replace('_', ' ')}: ${errMsg}`,
         },
         { status: 500 }
       );

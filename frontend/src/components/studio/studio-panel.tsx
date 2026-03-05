@@ -36,6 +36,7 @@ import {
 } from '@phosphor-icons/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState } from 'react';
+import { toast } from 'sonner';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -55,6 +56,7 @@ import {
   GenerationConfigDialog,
   GenerationType,
   GenerationConfig,
+  typeLabels,
 } from './generation-config-dialog';
 
 // Metadata for a generated study material
@@ -229,6 +231,13 @@ export function StudioPanel({
   // Handle generation from config dialog
   const handleGenerate = (config: GenerationConfig) => {
     setConfigDialogOpen(false);
+
+    const label = typeLabels[config.type] || config.type;
+    toast.loading(`Generating ${label}...`, {
+      id: `generating-${config.type}`,
+      description: 'This may take a minute. The result will open automatically.',
+      duration: Infinity,
+    });
 
     // Route to appropriate handler based on type
     const studyTypes = ['flashcards', 'quiz', 'study-guide', 'faq', 'mind-map'];
